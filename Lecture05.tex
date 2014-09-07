@@ -1,0 +1,167 @@
+% Lecture 5: 01 October 2012
+\sektion{5}{Key Management}
+\sidenote{
+    US for a long time put restrictions on export of cryptographic software, the
+    same restrictions as munitions, requiring a special license.
+
+    Java, for example, would have liked to include crypto along with runtime
+    libraries but hard to get license. Possible solutions:
+    \begin{itemize}
+    \item plugin architecture: could plug-in if they have their own
+    \item designed libraries in a way convenient for people who want to
+        implement their own crypto (export general purpose math library without
+        the export-control issues.
+    \end{itemize}
+}
+\subsektion{How big should keys be?}
+A key should be so big an adversary has negligible chance of guessing it.
+\begin{itemize}
+    \item Watch out for Moore's law (adversary's capabilities increase by one
+        bit every 18 months)
+    \item For symmetric ciphers, 128 bits is plenty: $2^{128} \approx 10^{39}$,
+        so at 1 trillion guesses per second, takes 10 quadrillion times the
+        lifetime of the universe.
+    \item Need larger for PRF/hash: suppose we're using for digital signature,
+        then we're in trouble if adversary finds a ``collision'' ($x_1 \neq x_2$
+        s.t. $H(x_1) = H(x_2)$). Finding a collision is more efficient than
+        finding key.
+
+        \sidenote{
+            {\bf ``Birthday attack'':}
+
+            Generate $2^{b/2}$ items at random, look for collisions in that set
+            ($b$ is the bit-length of your hash). Odds are $\sim$50\%.
+
+            Attack requires O($2^{b/2}$) time and O($2^{b/2}$) space, also
+            possible in constant space.
+
+            Pepople can generate invalid digital certificates through exploiting
+            these collisions.
+        }
+        Upshot: PRF output size is typically 2x cipher output size to be safe
+        (256 bits)
+\end{itemize}
+
+\subsektion{Key management principles}
+\begin{enumerate}
+\setcounter{enumi}{-1}
+    \item Key management is the hard part
+    \item Keys must be strongly (pseudo)random
+    \item Different keys for different purposes (signing/encrypting, encrypting
+        vs MACing, Alice - Bob vs Bob - Alice, different protocols)
+    \item Vulnerability of a key increases
+    \begin{itemize}
+        \item the more you use it
+        \item the more places you store it
+        \item the longer you have it
+    \end{itemize}
+    So change keys that get ``used up'', and use ``session keys''. If Alice and
+    Bob share a long-term key, generate a fresh key just for now and use the
+    long-term key to ``handshake'' and agree on which fresh key to use.
+    \item The hardest key to compromise is one that's not in accessible storage
+        (e.g. a key that's in a drive locked in a safe)
+    \item Protect yourself against compromise of old keys (forward secrecy);
+        destroy keys when you're done with them (and keep track of where the
+        keys are)
+\end{enumerate}
+
+{\bf Diffie-Hellman key exchange (D-H):} 1976\\
+Like RSA, relies on a hardness assumption. Here, rely on hardness of ``discrete
+log'' problem (given $g^x \mod p$, find $x$). $g,p$ are public, and $p$ is a
+large prime.
+
+\begin{table}[h!]
+\centering
+\begin{tabular}{cccc}
+Alice & & Bob & \\
+\cline{1-3} & & & \multirow{8}{*}{\begin{sideways}$\xleftarrow{\quad\qquad\text{time}\qquad\quad}$\end{sideways}}\\
+& agree on $g,p$ (public), & & \\
+& $p = 2q+1$, $q$ prime (``safe prime'') & & \\
+random $a$, & & random $b$, & \\
+$1 < a < p-1$ & & $1 < b < p-1$ & \\
+& $\xrightarrow{g^a \mod p} \xleftarrow{g^b \mod p}$ & & \\
+$\left(g^b \mod p\right)^a \mod p$ & & $\left(g^a \mod p\right)^b \mod p$ & \\
+$= g^{ba} \mod p$ & & $= g^{ab} \mod p$ &
+\end{tabular}
+\end{table}
+
+Adversary's best attack is to try to solve the discrete log problem. So Alice
+and Bob know something that nobody else knows.
+
+In practice, use $H(g^{ab} \mod p)$ as a shared secret.
+
+BUT: works against an evesdropper (``passive adversary'', ``Eve'') but insecure
+if adversary can modify messages (``man in the middle'', ''MITM'' attack)
+
+\begin{table}[h!]
+\centering
+\begin{tabular}{ccccc}
+Alice & & Mallory & & Bob\\
+\hline
+$a$ & & $u \qquad v$ & & $b$\\
+& $\xrightarrow{g^a \mod p}$ & & $\xleftarrow{g^b \mod p}$ &\\
+& $\xleftarrow{g^u \mod p}$ & & $\xrightarrow{g^v \mod p}$ &\\
+$g^{au} \mod p$ & $\xleftrightarrow{\qquad\quad}$ & $g^{au} \quad g^{av}$ & $\xleftrightarrow{\qquad\quad}$ & $g^{bv} \mod p$
+\end{tabular}
+\end{table}
+
+Upshot: D-H gives you a secret shared with \emph{someone}.
+
+Solution:
+\begin{enumerate}
+    \item Rely on physical proximity or recognition to know who's talking
+    \item Consistency check: check that A, B end up with the same value $g^{ab}$
+        or that A, B saw the same messages.
+\end{enumerate}
+How?
+
+Use digital signature (by one party, typically the server)
+
+If Bob can verify Alice's signature, but not the other way around, this still
+works (say Alice is a well-known server).
+
+This gives two properties at once:
+\begin{itemize}
+    \item A authenticates B or vice verse
+    \item No MITM, so A and B have a shared secret
+\end{itemize}
+
+{\bf D-H and forward secrecy:}\\
+Suppose Alice, Bob already have a shared key and want to negotiate a new key.
+Then they can do a simple D-H key exchange, protected by old key, then get new
+key.
+
+If an adversary doesn't know the old key, can't tamper with the D-H messages.
+Even if the adversary gets an old key, not knowing the old key \emph{in real
+time} means Mallory can't attack the D-H exchange. So Alice and Bob get forward
+secrecy with relatively low cost.
+
+Another problem, similar to MITM:
+
+\begin{table}[h!]
+\centering
+\begin{tabular}{ccccc}
+Alice & & Mallory & & Bob\\
+\hline
+$a$ & & & & $b$\\
+& $\xrightarrow{g^a \mod p}$ & & $\xleftarrow{g^b \mod p}$ &\\
+& $\xleftarrow{\quad1\quad}$ & & $\xrightarrow{\quad1\quad}$ &\\
+$1^a \mod p$ & & & & $1^b \mod p$
+\end{tabular}
+\end{table}
+
+So abort if receive a 1. Another bad value is $p-1$.
+
+Note: \begin{align*}
+\left(p-1\right)^2 \mod p &= \left(p^2 - 2p + 1\right) \mod p\\
+    &= (0-0+1) \mod p\\
+    &= 1
+\end{align*}
+Then:
+$$\left(p-1\right)^a \mod p = \begin{cases}1 &\mbox{if $a$ is even}\\
+    p-1 &\mbox{if $a$ is odd}\end{cases}$$
+So also abort if receive $p-1$.
+
+If you chose a safe prime, $1$ and $p-1$ are the only bad values, and there's a
+very small chance that one of these would be sent legitimately (plus Alice and
+Bob may be checking to make sure they don't send them anyway).

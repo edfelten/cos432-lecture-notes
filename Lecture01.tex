@@ -1,0 +1,182 @@
+% Lecture 1: 17 September 2012
+\sektion{0}{Course Information}
+Professor: Ed Felten
+
+Website: \url{http://bit.ly/Ribzeh} and Piazza
+
+Lectures: 11am Monday, Wednesday in Computer Science 104
+
+\sektion{1}{Message Integrity}
+\subsektion{Sending messages}
+\ovalbox{Alice} $\xrightarrow{m}$
+    \ovalbox{Mallory} $\xrightarrow{?}$
+    \ovalbox{Bob}
+
+Assume: ({\bf threat model}, what adversary can do and accomplish; always assume
+         that Mallory is malicious in the most devious possible way, as opposed
+         to random error)
+\begin{itemize}
+    \item Mallory can see and forge messages
+    \item Mallory wants to get Bob to accept a message that Alice didn't send
+\end{itemize}
+
+\sidenote{
+    {\bf CIA Properties}
+    \begin{itemize}
+        \item Confidentiality: trying to keep information secret from someone
+        \item Integrity: making sure information hasn't been tampered with
+        \item Availability: making sure system is there and running when needed
+    \end{itemize}
+}
+In this problem, the goal is integrity (we can't get the other two)
+
+\sidenote{
+    {\bf Role of stories in security:}
+    \begin{itemize}
+        \item Pro: easy to follow
+        \item Cons:
+        \begin{itemize}
+            \item forget ``Alice'' is a computer (no common sense)
+            \item forget ``Alice'' is a person + computer (one may have some
+                    knowledge that other doesn't, e.g. knowledge divergence in
+                    phishing attack
+            \item might root for one side or the other and lose impartiality
+        \end{itemize}
+    \end{itemize}
+}
+
+What to send:\\
+
+\ovalbox{Alice} $\xrightarrow{(m, f(m))}$
+    \ovalbox{Mallory} $\xrightarrow{(a,b)}$
+    \ovalbox{Bob} : accept $a$ iff $f(a) = b$
+
+$f$ is a {\bf Message Authentication Code (MAC)}\\
+
+Properties $f$ needs to be a secure MAC:
+\begin{enumerate}
+    \item deterministic (Bob needs to get the same answer that Alice got)
+    \item easily computable by Alice and Bob
+    \item not computable by Mallory (else Mallory can send $(x, f(x))$ for any
+        $x$ he wants)
+\end{enumerate}
+
+Choosing $f$:
+\begin{itemize}
+    \item picking something that you think Mallory won't guess is risky since
+        you can't draw any confident conclusions
+    \item use a random function:
+        \begin{table}[!h]\centering\begin{tabular}{r|ll}
+            input & output &\\
+            \cline{1-2}
+            $\emptyset$ & 01011... & $\leftarrow$ 256 coin flips\\
+            0 & 101... &\\
+            1 & ... &\\
+        \end{tabular}\end{table}
+
+\sidenote{
+    {\bf ``secure MAC game'': us vs. Mallory}
+
+    \hspace*{0.5 cm} repeat until Mallory says ``stop'': \{\\
+        \hspace*{1 cm} Mallory chooses $x_i$\\
+        \hspace*{1 cm} we announce $f(x_i)$\\
+    \hspace*{0.5 cm} \}\\
+    \hspace*{0.5 cm} Mallory chooses $y \not\in \{x_i\}$\\
+    \hspace*{0.5 cm} Mallory guesses $f(y)$: wins if right
+
+    Say $f$ is a secure MAC if Mallory can't do better than random guessing
+    \bigskip
+    \begin{theorem*}{A random function is a secure MAC.}\end{theorem*}
+    \emph{Intuition:} Mallory asks to reveal certain entries, but for $y$
+        Mallory is trying to guess the result of the coin flips
+}
+    \item use a pseudorandom function:
+
+        {\bf pseudorandom function (PRF)}: ``looks random'', ``as good as
+            random'', practical to implement
+
+        typical approach:
+        \begin{itemize}
+            \item \underline{public} family of function $f_0, f_1, f_2, \dots$
+            \item \underline{secret} key $k$
+            \item \underline{use} $f_k$
+        \end{itemize}
+
+\sidenote{
+    {\bf Kerckhoffs's principle:}
+
+    Use a public function family and a randomly chosen secret key.
+    \bigskip
+    Advantages:
+    \begin{enumerate}
+        \item can quantify probability that key will be guessed
+        \item different people can use the same functions with different keys
+        \item can change key if needed (something goes wrong)
+    \end{enumerate}
+}
+\sidenote{
+    {\bf ``PRF game'' against Mallory}:
+
+    \hspace*{0.5 cm} we flip a coin secretly to get $b \in \{0,1\}$\\
+    \hspace*{0.5 cm} if $b = 0$, let $g = $ random function\\
+    \hspace*{0.5 cm} else, $g=f_k$ for random $k$\\
+    \hspace*{0.5 cm} repeat until Mallory says ``stop'': \{\\
+        \hspace*{1 cm} Mallory chooses $x_i$\\
+        \hspace*{1 cm} we announce $g(x_i)$\\
+    \hspace*{0.5 cm} \}\\
+    \hspace*{0.5 cm} Mallory guesses $b$: wins if right
+
+    $f$ is a PRF if Mallory can't do better than 50/50 (actually, allow a tiny
+            advantage)\\
+
+    Note: Mallory can always win by exhaustive search of the $f_k$'s, so need to
+    limit Mallory to ``practical''\\
+
+    \begin{theorem*}{If $f$ is a PRF, then $f$ is a secure MAC}\end{theorem*}
+    \begin{proof} By contradiction. \end{proof}
+}
+\end{itemize}
+
+What to send (new):\\
+
+\ovalbox{Alice} $\xrightarrow{(m, f_k(m)}$
+    \ovalbox{Mallory} $\xrightarrow{(a,b)}$
+    \ovalbox{Bob} : accept $a$ iff $f_k(a) = b$
+
+Assumptions:
+\begin{enumerate}
+    \item $k$ is kept secret from Mallory
+    \item Alice and Bob both know $k$
+\end{enumerate}
+
+\subsektion{Do PRF's exist?}
+Answer: maybe/ we hope so (some functions haven't lost yet)\\
+
+Here's one: HMAC-SHA256
+$$f_k(x) = S((k \xor z_1) || S((k \xor z_2) || x))$$
+where $z_1 = 0x3636\dots$, $z_2 = 0x5c5c\dots$ (note that $||$ is concatenation)
+and $S$ is ``SHA-256'': start with ``compression function'' $C$, taking 256 and
+512 bits in, outputting 256 bits
+
+\makebox[2cm]{}\framebox[8cm]{input}\framebox[2cm]{pad}\\
+\makebox[2cm]{}\framebox[2cm]{}\framebox[2cm]{}\framebox[2cm]{}\framebox[2cm]{}
+\mbox{512 bit blocks}\\
+\makebox[2cm]{}\makebox[2cm]{$\Downarrow$}\makebox[2cm]{$\Downarrow$}
+\makebox[2cm]{$\Downarrow$}\makebox[2cm]{$\Downarrow$}\\
+\makebox[2cm]{const $\rightarrow$}\makebox[2cm]{C}\makebox[.2cm]{$\rightarrow$}
+\makebox[1.4cm]{C}\makebox[4.4cm]{$\cdots$}\makebox[2cm]{output}
+
+Note: This is subject to length extension attacks\\
+
+``cryptographic hash'' (MD5, SHA-1, SHA-?) are dangerous to use directly because
+they don't have the properties you think/want then to have.\\
+
+Better: use a PRF even if $k$ is non-secret
+
+\subsektion{Multiple Alice - Bob messages}
+How to deal with Mallory sending messages out of order or resending old messages
+\begin{enumerate}
+\item append sequence number to each message:\\
+        Alice sends $m_0' = (0, m_0)$, $m_1' = (1, m_1)$
+\item switch keys per message
+\end{enumerate}

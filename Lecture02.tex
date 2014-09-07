@@ -1,0 +1,178 @@
+% Lecture 2: 19 September 2012
+\sektion{2}{Randomness}
+Best way to get a value that is unknown to an adversary is to choose a random
+value, but it's hard to get this in practice.\\
+
+From last time, got that PRF works as MAC.
+
+\sidenote{
+    {\bf What is a PRF?}\\
+
+    Two views:
+    \begin{enumerate}
+        \item family of functions $f_k(x)$
+        \item function $f(k,x)$. This is the view we'll be using for this class.
+    \end{enumerate}
+}
+
+{\bf True randomness}:
+\begin{itemize}
+    \item outcome of some inherently random process
+    \item assume it ``exists'' but it's scarce and hard to get
+\end{itemize}
+
+{\bf Pseudorandom generator (PRG)}:
+\begin{itemize}
+    \item takes a small ``seed'' that's truly random
+    \item generates a long sequence of ``good enough'' values
+    \item maintains ``hidden state''
+\end{itemize}
+
+\begin{definition}
+PRG is {\bf secure} if indistinguishable from a truly random value/string.\\
+This is based on the game versus Mallory (can Mallory tell real randomness from
+PRG?), where secure means that Mallory wins 50\% ($+\epsilon$) assuming Mallory
+has limited resources.
+\end{definition}
+
+Another desireable property is Forward Secrecy:\\
+If Mallory compromises the hidden state of the generator at time $t$, Mallory
+can't reconstruct past outputs of the generator.\\
+\begin{example}{A PRG that is \underline{not} FS but is secure:}
+    \begin{itemize}
+    \item Let $f$ be a PRF
+    \item output = $f(\text{seed}, 0) || f(\text{seed}, 1) || f(\text{seed}, 2)
+        || \cdots$
+    \item hidden state = seed, counter
+    \end{itemize}
+\end{example}
+
+\begin{example}{A PRG that is FS and secure:}
+    \begin{itemize}
+    \item Let $f$ be a PRF
+    \item to initialize: state $\leftarrow$ seed
+    \item to generate output:
+    \begin{enumerate}
+        \item out $\leftarrow$ $f(\text{state}, 0)$
+        \item state $\leftarrow$ $f(\text{state}, 1)$
+        \item return out
+    \end{enumerate}
+    \end{itemize}
+\end{example}
+
+\subsektion{PRG as a system service}
+Hard parts: getting seed, recovering from compromise\\
+
+Getting a good seed: want true randomness
+\begin{itemize}
+    \item special circuit
+    \item ambient audio/video: lava lamps! (lavarand)
+\end{itemize}
+problems: not \emph{truly} random (correlations)\\
+
+Alternate view: gather data unpredictable to adversary
+\begin{itemize}
+    \item exact history of key presses
+    \item exact path of mouse
+    \item periodic screenhot
+    \item internal temperature
+    \item ambient audio
+\end{itemize}
+Then: distill down to ``pure'' randomness - feed it all into a PRF. If there's
+enough randomness in input, output will be ``pure random''.\\
+Use this to:
+\begin{itemize}
+    \item seed the system PRG
+    \item renew the state (mix fresh randomness in with hidden state) using PRF,
+        to re-establish secrecy of hidden state -- do as a precaution\\
+
+        NOTE: adding a single bit at a time, Mallory can keep up since once 2
+        possiblities, but if we wait until have a lot, say 256 bits of
+        randomness, then Mallory can't keep up ($2^{256}$ possibilities), even
+        knowing the algorithm/system since that's usually standard
+\end{itemize}
+
+{\bf Linux}:
+\begin{itemize}
+    \item {\tt /dev/random} gives pure random bits, but have to wait
+    \item {\tt /dev/urandom} is output of PRG, renewed via ``pure'' randomness
+\end{itemize}
+
+The boot problem: At startup,
+\begin{itemize}
+    \item least access to randomness (system is clean)
+    \item highest demand for randomness (programs want keys)
+\end{itemize}
+
+Solutions (with their problems):
+\begin{itemize}
+    \item save some randomness only accessible at boot:\\
+        hard to tell that this hasn't been observed, or used on last boot
+    \item connect to someone across network to give pseudorandomness:\\
+        want secure connection but don't yet have key (okay if have just enough
+        for that key, or semi-predictable and hope Mallory doesn't guess)
+\end{itemize}
+
+\subsektion{Encrypting data for confidentiality}
+Now may have a (passive) eavesdropper Eve:\\
+\makebox[5cm]{\ovalbox{Alice} $\rightarrow$ \ovalbox{Bob}}\\
+\makebox[5cm]{$\downarrow$}\\
+\makebox[5cm]{\ovalbox{Eve}}\\
+
+Message processing:\\
+\makebox[1.5cm]{$\xrightarrow{\text{plaintext}}$}
+    \framebox[2.5cm]{$E$ (encrypts)}
+    \makebox[1.5cm]{$\xrightarrow{\text{ciphertext}}$}
+    \framebox[2.5cm]{$D$ (decrypts)}
+    \makebox[1.5cm]{$\xrightarrow{\text{plaintext}}$}\\
+\makebox[1.5cm]{}\makebox[2.5cm]{$\uparrow$}
+    \makebox[1.5cm]{}\makebox[2.5cm]{$\uparrow$}\\
+\makebox[1.5cm]{}\makebox[2.5cm]{key $k$}
+    \makebox[1.5cm]{}\makebox[2.5cm]{key $k$}\\
+
+Goal: ciphertext does not convey anything about plaintext
+
+\sidenote{
+    {\bf ``encryption game'' against Mallory:}
+
+    \hspace*{0.5 cm} Mallory chooses two pieces of plaintext\\
+    \hspace*{0.5cm} We flip a coin and encrpyt one of them\\
+    \hspace*{0.5cm} Mallory guesses which was encrypted: wins if right
+
+    We say that the encrpytion method is secure if Mallory can't do better than
+    random guessing (50/50) + $\epsilon$.\\
+
+    Note: if we were being more rigorous in our difinitions, we would use a
+    stronger definition of security for encryption here so that it's easier to
+    combine later with integrity. However, the methods we are learning are
+    secure by any of the definitions.
+}
+
+First approach: one-time pad
+\begin{enumerate}
+    \item Alice and Bob jointly generate a long random string $k$ (``the pad'')
+    \item $E(k, x) = k \xor x$
+    \item $D(k, y) = k \xor y = k \xor (k \xor x) = (k \xor k) \xor x = x$
+\end{enumerate}
+Problems:
+\begin{enumerate}
+    \item can't reuse key:\\
+        $(k \xor a) \xor (k \xor b) = a \xor b$\\
+        worst case, Eve knows one message, but even knowing that the messages
+        are say English text can give Eve information from character
+        distributions
+    \item need really long key -- needs to be as long as sum of message lengths
+\end{enumerate}
+Idea: use a PRG to ``stretch'' a small key (called a ``stream cipher'')
+\begin{itemize}
+    \item Alice and Bob run parallel PRG's with same key
+    \item xor messages with PRG's output
+\end{itemize}
+
+\subsektion{Confidentiality and integrity}
+Encrypt plaintext, then append MAC: Bob first integrity checks, then decrypts.
+Note that we need to use separate keys for confidentiality and integrity, and a
+separate set of two keys for reverse channel (Bob to Alice).\\
+
+If we have only one shared key, we seed the PRG with the shared key and then use
+four  values it produces for the message sending.

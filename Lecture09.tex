@@ -1,0 +1,170 @@
+% Lecture 9: 15 October 2012
+\sektion{9}{Information flow and multi-level security}
+Information flow: how to control propagation of information within a program or
+between programs on a system where there is some confidentiality requirement.
+
+Consider a program $P(v, s, r)$:
+\begin{itemize}
+    \item $v$: visible (public) input
+    \item $s$: secret input
+    \item $r$: randomness (secret)
+\end{itemize}
+Output: all visible actions of program
+
+Does the output of $P$ leak information about $s$? Define a game against
+adversary guessing between two possible secrets $s$. To avoid leakage, the
+distribution of outputs must be independent of $s$ for all possible values of
+$v$.
+
+How to enforce non-leakiness?
+
+Unlike with previous properties, cannot enforce by watching $P$ run.
+(Just because no output came out doesn't mean there wasn't a leak - ``dog that
+didn't bark problem''). It's inherently necessary to consider what-ifs that
+differ from what you actually saw
+
+\subsektion{Lattice model}
+General model for information flow policy
+
+\begin{definition}{Lattice}
+
+    $(S, \sqsubseteq)$, $S$: set of states, $\sqsubseteq$: partial order such
+    that for any $a, b \in S$, there is a least upper bound of $a, b$ and a
+    greatest lower bound of $a,b$.
+
+    partial order:
+    \begin{itemize}
+        \item reflexive: $a \sqsubseteq a$
+        \item transitive: $a \sqsubseteq b$ and $b \sqsubseteq c$, then
+            $a \sqsubseteq c$
+        \item asymmetric: $a \sqsubseteq b$ and $b \sqsubseteq a$, then $a = b$
+    \end{itemize}
+    least upper bound of $a, b$:
+    \begin{itemize}
+        \item $a \sqsubseteq U$ and $b \sqsubseteq U$ and for all $v \in S$,
+            $a \sqsubseteq V$ and $b \sqsubseteq V$ $\Rightarrow$
+            $U \sqsubseteq V$
+    \end{itemize}
+\end{definition}
+\begin{example}{Lattices}
+    \begin{enumerate}
+        \item linear chain of labels:
+
+            public $\sqsubseteq$ confidential
+
+            unclassified $\sqsubseteq$ classified $\sqsubseteq$ secret
+                $\sqsubseteq$ top secret
+        \item compartments
+
+            state is set of labels, $\sqsubseteq$ is subset
+        \item org chart
+
+            state is node in chart, $\sqsubseteq$ is ancestor/descendant
+        \item combination/cross product of lattices
+
+            state is $(S_1, S_2)$, $(A_1, B_1) \sqsubseteq (A_2, B_2)$ iff
+            $A_1 \sqsubseteq A_2$ and $B_1 \sqsubseteq B_2$
+    \end{enumerate}
+\end{example}
+\subsektion{Information flow in a program}
+At each point in the program, every variable has a state (that comes from the
+lattice we're using). Inputs are tagged with state, and states are propagated
+when code executes: $a = b + c$; State($a$) = LUB(State($b$), State($c$))
+[LUB = Least Upper Bound]
+
+Before providing output, check that state of output value is consistent with
+policy. (For example, only allowed to emit unclassified output.)
+
+But this isn't enough (only monitoring and rejecting when inconsistent with
+policy) -- ``dog that didn't bark'':
+\begin{verbatim}
+// State(a) = ``secret''
+b = 0;  // 0 isn't secret, so b is set to unclassified
+if (a > 5)  b = 1;  // Requires static (compile-time) analysis to get right
+output b;   // Says something about a, so should be labelled as secret
+\end{verbatim}
+Static analysis won't catch all, but will catch some of the leaks.
+\begin{description}
+    \item[Problem 1:] conservative analysis leads to being overly cautious
+    \item[Problem 2:] timing might depend on values
+\end{description}
+
+{\bf What if you can't prevent a program from leaking the information it has?}
+
+{\bf Bell-LaPadula model}: lattice-based information flow for programs and files
+\begin{itemize}
+\item every program has a state (from lattice): what it's allowed to access
+\item every file has a state: what it contains
+\item Rule 1: ``No Read Up'' - Program $P$ can read File $F$ only if State($F$)
+    $\sqsubseteq$ State($P$)
+\item Rule 2: ``No Write Down'' - Program $P$ can write File $F$ only if
+    State($P$) $\sqsubseteq$ State($F$)
+\end{itemize}
+\begin{theorem*} If State($F_1$) $\sqsubseteq$ State($F_2$) and the two rules are
+enforced, then information from $F_2$ cannot leak into $F_1$.
+\end{theorem*}
+
+Problems:
+\begin{enumerate}
+    \item expections (need to make explicit loopholes in system to allow)
+    \begin{itemize}
+        \item declassification of old data
+        \item aggregate/``anonymized'' data
+        \item policy decision to make exception
+    \end{itemize}
+    \item usability - system can't tell you if there are classified files in a
+        directory you're trying to delete or no space on disk for you to add a
+        file
+    \item outside channels - people talk to each other outside the system
+\end{enumerate}
+
+This, so far, has been about confidentiality. Can we do the same thing for
+integrity?
+\begin{itemize}
+    \item State: level of trust in integrity of information
+    \item ensure high-integrity data doesn't depend on low-integrity inputs
+        (try to avoid GIGO problem)
+\end{itemize}
+
+{\bf Biba model}: (B-LP for integrity)
+\begin{itemize}
+    \item Rule 1: ``No Read Down''
+    \item Rule 2: ``No Write Up''
+\end{itemize}
+
+B-LP model and Biba model at the same time?
+\begin{itemize}
+    \item if use same labels for both (high confidentiality = high integrity),
+        then no communication between levels
+    \item if different labels, then some information flows become possible, but
+        could result in being much more difficult for users
+    \item result: usually focus on confidentiality or integrity and let humans
+        worry about this outside of the system
+\end{itemize}
+\sidenote{{\bf Back to crypto...}
+
+Secret sharing:
+\begin{itemize}
+    \item divide a secret into ``shares'' so that all share are required to
+        reconstruct secret
+        \begin{itemize}
+            \item 2-way: pick a large value $M$, secret is some $s$,
+                $0 \le s < M$\\
+                pick $r$ randomly, $0 \le r < M$\\
+                shares are $r$, $(s-r) \mod M$\\
+                to reconstruct, add shares $\mod M$
+            \item $k$-way: shares $r_0, r_1, \dots, r_{k-2}$ random,
+                $(s - (r_0 + \cdots + r_{l-2})) \mod M$
+            \item can also construct degree $k$ polynomials such that $k$ values
+                are needed to reconstruct
+        \end{itemize}
+    \item suppose RSA private key is $(d, N)$, shares
+        $(d_1, N), (d_2, N), (d_3, N)$ such that
+        $d_1 + d_2 + d_3 = d \mod(p-1)(q-1)$
+
+        $\left(X^{d_1} \mod N\right)\left(X^{d_2}\right)\left(X^{d_3}\right) =
+        X^{(d_1 + d_2 + d_3)\mod(p-1)(q-1)} \mod N = X^d \mod N$
+
+        (splits up an RSA operation)
+\end{itemize}
+}

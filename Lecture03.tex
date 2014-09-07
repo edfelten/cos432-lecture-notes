@@ -1,0 +1,202 @@
+% Lecture 3: 24 September 2012
+\sektion{3}{Block ciphers}
+
+\sidenote{
+    {\bf Story from WWII:}
+
+    Pacific war: lots of radio communications; crypto and US decryptions paid a
+        huge role
+
+    Admiral Nimitz had advantage of code break giving Japanese battle plan
+        (Battle of Midway)
+
+    Most successful code was used by the US Marines: the Navajo language served
+        as a code by translating the first letter of an English word into a
+        Navajo word and sending that by radio (allowed speech communication).
+
+    Even when they got a Navajo speaker, the Japanese were unable to usefully
+        decrypt these messages.
+}
+
+Last time: Stream ciphers
+    $$E(k,m) = D(k, m) = \text(PRG)(k) \xor m$$
+
+Alternative approach: Block ciphers
+
+Start with function that encrypts a fixed-size block of data (and fixed-size
+        key) and build up from there
+\begin{itemize}
+    \item may run faster
+    \item many PRGs work this way anyway
+\end{itemize}
+
+Note that block cipher is not the same thing as a PRF, since a PRF may have no
+    inverse ($\exists x_1, x_2 \text{ s.t. } f(k,x_1) = f(k,x_2)$
+
+Want: psuedorandom permutation (PRP)
+\begin{itemize}
+    \item function from $n$-bit input (plus key) to $n$-bit output
+    \item if $x_1 \neq x_2$, then $f(k, x_1) \neq f(k, x_2)$
+    \item psuedorandom as expected from previous definitions -- should be
+        indistinguishable from truly random to an adversary
+\end{itemize}
+
+Challenge: design a very hairy function that's invertible, but only by someone
+who knows the key. A PRP will have this property.\\
+
+Minimal properties of a good block cipher:
+\begin{itemize}
+    \item efficient
+    \item highly nonlinear (``confusion property'') - hard for adversary to
+        invert
+    \item mix input bits together (``diffusion'') - this is important so that
+        small changes to the input will create complicated changes in the output
+    \item depend on the key
+\end{itemize}
+
+How to get these properties: Feistel network
+
+\makebox[6cm]{plaintext}\\
+\framebox[6cm]{\makebox[3cm]{left half}\textbar\makebox[3cm]{right half}}\\
+\makebox[6cm]{\makebox[1cm]{$\downarrow$}\makebox[4cm]{}\makebox[1cm]{$\downarrow$}}\\
+\makebox[6cm]{\makebox[1cm]{$\xor$}\makebox[1cm]{$\longleftarrow$}\framebox[2cm]{$f(k_0)$}\makebox[1cm]{$\longleftarrow$}\makebox[1cm]{$\downarrow$}}   ``feistal round''\\
+\makebox[6cm]{\makebox[1cm]{$\downarrow$}\makebox[4cm]{}\makebox[1cm]{$\downarrow$}}\\
+\makebox[6cm]{------------------------------------------------}\\
+\makebox[6cm]{\makebox[1cm]{$\downarrow$}\makebox[1cm]{$\longrightarrow$}\framebox[2cm]{$f(k_1)$}\makebox[1cm]{$\longrightarrow$}\makebox[1cm]{$\xor$}}   another round\\
+\makebox[6cm]{\makebox[1cm]{$\downarrow$}\makebox[4cm]{}\makebox[1cm]{$\downarrow$}}\\
+
+Add as many rounds as you want, alternating left and right rounds.\\
+
+Why? easy to invert since each round is its own inverse, so inverse of series
+of rounds is the same series in reverse order. This makes it so that $f$ can be
+as difficult as we want and the process is still invertible, so why not make $f$
+a PRF?\\
+
+\begin{theorem*}
+If $f$ is a PRF, then 4-round feistel network is a PRP.
+\end{theorem*}
+Often use weaker rounds, but more of them.
+
+\begin{example}{DES (Data Encryption Standard)}
+    \begin{itemize}
+        \item block size 64 bits
+        \item 56-bit key
+        \item Feistel network - 16 (weak) rounds
+    \end{itemize}
+
+    History:
+    \begin{itemize}
+        \item designed in secrey by IBM and NSA
+        \item 1978
+        \item US government standard
+        \item private sector followed
+    \end{itemize}
+
+    Backdoor known to designers but not public? Concerns by public over the
+    source - history of US offering other governments intentionally weak ciphers
+
+    Reason for secrecy around design was that some of the classification: wanted
+    to make secure against differential cryptanalysis, but that wasn't publicly
+    known yet and NSA wanted to keep using it against others.
+
+    Designed to be slow in software to discourage it from being implemented in
+    software
+
+    Key size problem:\\
+    $2^{56}$ steps for a brute-force search to recover an unknown key, which is
+    currently feasable, though not in 1978 (except maybe by NSA?)
+
+    This can be addressed by iterating DES with multiple keys. Note that you
+    need to do this three times to get $2^{112}$ for brute force search.
+\end{example}
+
+\begin{example}{AES (Advanced Encryption Standard)}
+    Probably the best available today, coming from overcoming drawbacks of DES
+    \begin{itemize}
+        \item softward efficiency a goal
+        \item large, variable key size (128-, 192-, 256-bit variants)
+        \item open, public process for choosing and generating the cipher\\
+            run by NIST and a design contest judged on pre-determined criteria
+    \end{itemize}
+
+    2002 - NIST chose Rijndeal (Belgian designers)
+\end{example}
+
+\subsektion{128-bit AES}
+\begin{itemize}
+    \item 128-bit input, output, and key
+    \item not feistel design
+    \item lookup table public
+
+    \item ten rounds (generally cryptanalysis is a small-round break and then
+            extending the tactic to a full number of rounds, so use a safe
+            number then add extra rounds for safety buffer), each with four steps
+        \begin{enumerate}
+            \item non-linear step (``confusion''):
+
+                run each byte through a certain non-linear function (lookup
+                table of a permutation)
+            \item shift step (``diffusion''):
+
+                take 2nd row and shift right ($>>>$) by one slot, putting
+                overflow in next row, 3rd row by 2 slots, 4th row by 3 slots
+                (circular shift)
+
+                spreads out columns
+            \item linear mix (``diffusion''):
+
+                take each column, treat as 4-vector and multiply by a certain
+                matrix
+
+                mixes within column
+            \item key-addition step (key-dependent):
+
+                xor each byte with corresponding byte of the key
+
+                Note: the key expansion could be a source of weakness (to get
+                the ten keys needed from one)
+        \end{enumerate}
+    \item (think of 128-bits as 4x4 array of bytes)
+    \item to decrypt, do inverses in reverse order
+\end{itemize}
+
+\subsektion{How to handle variable-size messages}
+Problems:
+\begin{itemize}
+    \item padding - plaintext not a multiple of blocksize
+    \item ``cipher modes'' - dealing with multi-block messages
+\end{itemize}
+
+Padding: most important property needs to be that recipient can unambiguously
+    tell what is padding and what is not\\
+
+    Good method: add bits 10* until reach end of block (pull off all 0's at end
+    then the 1). Remember that you must add {\emph some} padding (at least one
+    bit) to every message. This works similarly with bytes.\\
+
+\bigskip
+Cipher modes: encrypt multi-block messages
+\begin{itemize}
+    \item ECB (Electronic Code Book) !! BAD - do not use !!
+        $$C_i = E(k, P_i$$
+        Same plaintext results in same ciphertext -- leaks information to
+        adversary
+    \item CBC (Cipher Block Chaining): Common, pretty good\\
+        ``strawman CBC'', $R_i$ random
+        $$C_i = (R_i, E(k, R_i \xor P_i)$$
+        Good, but doubles message size\\
+        Idea: use $C_{i-1}$ instead of $R_i$\\
+        $$C_i = E(k, C_{i-1} \xor P_i)$$
+        What about the first block? Generate a random value, the
+        ``initialization vector (IV)'', to prepend to message to serve as
+        $C_{-1}$. Don't want to reuse with same key, or adversary could compare
+        the first block of the ciphertext to see if same plaintext, but
+        random-ish generation good enough, and can use same key over and over.
+    \item CTR (Counter mode): Generally agreed on as best to use
+        $$C_i = E(k, \text{messageid} || \text{counter}) \xor P_i$$
+        messageid must be unique, then it's okay to reuse key.\\
+        Note: this would not be forward secret as a PRG.\\
+        Reasons to use CTR over PRG: more efficient on commodity hardware and
+        perhaps you trust AES more than your PRF (even though you can't prove it
+        either way)
+\end{itemize}

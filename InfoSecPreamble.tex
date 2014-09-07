@@ -1,0 +1,107 @@
+\documentclass[12pt,twoside]{article}
+
+ \usepackage{amsmath}   % Some symbols
+ \usepackage{amsthm}    % Does theorem stuff
+ \usepackage{amssymb}       % More symbols and fonts
+ \usepackage{empheq}        % Some more extensible arrows, like \xmapsto
+ \usepackage{enumerate}     % Formatting of enumerates
+ \usepackage{fancybox}      % More outline options for boxes
+ \usepackage{mathrsfs}      % Sheafy font \mathscr{}
+ \usepackage{multirow}      % For tables
+ \usepackage{pstricks}      % PSTricks!
+ \usepackage{rotating}      % Rotate text
+ \usepackage{xcolor}        % For colors (links)
+ \usepackage[all]{xy}       % Include XY-pic
+    \SelectTips{cm}{10}     % Use the nicer arrowheads
+    \everyxy={<2.5em,0em>:} % Sets the scale I like
+ \usepackage[colorlinks,
+             linkcolor=black,
+             pagebackref,
+             bookmarksnumbered=true]{hyperref}
+
+%% Pagestyle stuff %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+ % Begin paragraphs with an empty line rather than an indent                  %%
+ \usepackage[parfill]{parskip}                                                %%
+ \usepackage{fancyhdr}                                                        %%
+   \pagestyle{fancy}                                                          %%
+   \fancyhf{}   % Delete the current section for header and footer            %%
+ \usepackage[paperheight=11in,                                                %%
+             paperwidth=8.5in,                                                %%
+             outer=1.2in,                                                     %%
+             inner=1.2in,                                                     %%
+             bottom=.7in,                                                     %%
+             top=.7in,                                                        %%
+             includeheadfoot]{geometry}                                       %%
+   \addtolength{\headwidth}{.75in}                                            %%
+   \fancyhead[RO,LE]{\thepage}                                                %%
+   \fancyhead[RE,LO]{\sectionname}                                            %%
+   \setlength{\headheight}{15.8pt}                                            %%
+   \raggedbottom                                                              %%
+%% End Pagestyle stuff %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%% Stuff for keeping track of sections %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+ \newcommand{\sektion}[2]{\stepcounter{section}                               %%
+     \renewcommand{\thesection}{#1}                                           %%
+     \newpage\section{#2} \gdef\sectionname{#1\quad #2}}                      %%
+ \newcommand{\subsektion}[1]{\subsection*{#1}                                 %%
+     \addcontentsline{toc}{subsection}{#1}}                                   %%
+ % This is the empty section title, before any section title is set           %%
+ \newcommand\sectionname{}                                                    %%
+%% End stuff for keeping track of sections %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%% Theorem Styles and Counters %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+ \renewcommand{\theequation}{\thesection.\arabic{equation}}                   %%
+ \makeatletter                                                                %%
+    % Make the equation counter reset each section                            %%
+    \@addtoreset{equation}{section}                                           %%
+    % Make the footnote counter reset each section                            %%
+    \@addtoreset{footnote}{section}                                           %%
+                                                                              %%
+ \newenvironment{warning}[1][]{                                               %%
+    \begin{trivlist} \item[] \noindent                                        %%
+    \begingroup\hangindent=2pc\hangafter=-2                                   %%
+    \clubpenalty=10000%                                                       %%
+    \hbox to0pt{\hskip-\hangindent\manfntsymbol{127}\hfill}\ignorespaces      %%
+    \refstepcounter{equation}\textbf{Warning~\theequation}                    %%
+    \@ifnotempty{#1}{\the\thm@notefont \ (#1)}\textbf{.}                      %%
+    \let\p@@r=\par \def\p@r{\p@@r \hangindent=0pc} \let\par=\p@r}             %%
+    {\hspace*{\fill}$\lrcorner$\endgraf\endgroup\end{trivlist}}               %%
+                                                                              %%
+ \newenvironment{exercise}[1][]{\begin{trivlist}                              %%
+    \item{\bf Exercise\@ifnotempty{#1}{ #1}.}\it}{\end{trivlist}}             %%
+ \newenvironment{solution}{\begin{trivlist}                                   %%
+    \item{\it Solution.}}{\end{trivlist}}                                     %%
+                                                                              %%
+ \def\newprooflikeenvironment#1#2#3#4{                                        %%
+      \newenvironment{#1}[1][]{                                               %%
+%          \refstepcounter{equation}                                          %%
+          \begin{proof}[{\rm\csname#4\endcsname{#2}\@ifnotempty{##1}          %%
+              {\the\thm@notefont\(##1)}\csname#4\endcsname{.}}]               %%
+          \def\qedsymbol{#3}}                                                 %%
+         {\end{proof}}}                                                       %%
+ \makeatother                                                                 %%
+                                                                              %%
+ \newprooflikeenvironment{definition}{Definition}{$\diamond$}{textbf}         %%
+ \newprooflikeenvironment{example}{Example}{$\diamond$}{textbf}               %%
+ \newprooflikeenvironment{remark}{Remark}{$\diamond$}{textbf}                 %%
+                                                                              %%
+ \theoremstyle{plain}                                                         %%
+ \newtheorem{theorem}[equation]{Theorem}                                      %%
+ \newtheorem*{claim}{Claim}                                                   %%
+ \newtheorem*{lemma*}{Lemma}                                                  %%
+ \newtheorem*{theorem*}{Theorem}                                              %%
+ \newtheorem{lemma}[equation]{Lemma}                                          %%
+ \newtheorem{corollary}[equation]{Corollary}                                  %%
+ \newtheorem{proposition}[equation]{Proposition}                              %%
+%% End Theorem Styles and Counters %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%% Misc %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+ \newenvironment{sidenote}[1]{
+    \shadowbox{\parbox{\linewidth}{#1}}
+ }
+%% End Misc %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%% Macros %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+ \newcommand{\brenda}[1]{[[\ensuremath{\bigstar\bigstar\bigstar} #1]]}        %%
+ \newcommand*\xor{\oplus}
+%% End Macros %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

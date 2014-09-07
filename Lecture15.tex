@@ -1,0 +1,117 @@
+% Lecture 15: 12 November 2012
+\sektion{15}{Network security: protecting the infrastructure}
+\subsektion{Physical infrastructure}
+destruction by backhoes and rodents, problem
+of getting information off of physical wires, physical security of places where
+switching/routing is done
+\subsektion{Routing}
+\begin{tabular}{|c|}
+\hline
+sender IP\\
+\hline
+dest IP\\
+\hline
+ \\
+IP packet\\
+ \\
+\hline
+\end{tabular}
+\begin{itemize}
+\item hop-by-hop
+\item adaptive: routers talk to each other in real-time to figure out which
+    routes are good to get to particular destinations (router gossips with
+            neighbors to find good routes)
+    \begin{itemize}
+    \item bad gossip leads to bad routes - malicious/censorship, misconfiguration
+    \end{itemize}
+\item addressing some of the problems, but still hard to stop mistakes or malice
+    \begin{itemize}
+    \item prevent spoofed messages by authenticating - doesn't address genuine
+        but wrong information
+    \item check consistency
+    \item hard-wire certain information - also helps with maintaining business
+        deals
+    \end{itemize}
+\end{itemize}
+\subsektion{DNS}
+\texttt{www.princeton.edu} $\rightarrow$ 128.112.1.17
+
+Lookup uses UDP-based protocol:
+\begin{itemize}
+    \item request packet $\longrightarrow$
+    \item reply packet $\longleftarrow$
+\end{itemize}
+Problem: spoofed reply - attacker sends (forged) reply packet\\
+Defense (in place): request contains 16-bit query ID (QID), reply contains QID
+\begin{itemize}
+    \item Old days: generated QIDs sequentially - attacker can learn QID then
+        predict for the near future
+    \item Fix: generate QIDs pseudorandomly
+    \item Kaminksy attack: attacker gets $2^{16}$ guesses within a few seconds
+        -- big problem
+    \item Fix: DNSSEC (existed, just not deployed)
+    \begin{itemize}
+        \item Idea: reply is digitally signed, reply includes not only serverID
+            of authoritative server for the name, but also that server's public
+            key
+        \item To look up \texttt{www.princeton.edu}:
+        \begin{itemize}
+            \item ask root server: lookup(www.princeton.edu)
+            \item reply: (.edu, IPaddr$_1$, public key for .edu) signed by root
+                (hardcoded public key)
+            \item ask IPaddr$_1$: lookup(www.princeton.edu)
+            \item reply: (.princeton.edu, IPaddr$_2$, public key for
+                .princeton.edu) signed by .edu (use public key received from
+                root)
+        \end{itemize}
+    \end{itemize}
+\end{itemize}
+\subsektion{TCP}
+Provides reliable connection between machines; built on top of IP
+
+Vulnerabilities:
+\begin{itemize}
+    \item address spoofing - false source IP address
+    \item solution: reply to alleged address, put in something hard for attacker
+        to guess
+    \item tampering + eavesdropping - MITM along the route
+    \item solution: encrypt traffic
+    \item jamming - sending a forged error packet, flooding with traffic (TCP
+        SYN packets, result in half-open connections but can't open real
+        connections since fill table -- send traffic that's costly to process)
+    \item solution: filter these packets, don't believe first reset packet sent,
+        be skeptical of these kinds of packets, \dots
+\end{itemize}
+Checking packets for sender/receiver plausibility: routers throw away packets
+with addresses that seem to be wrong (what addresses should be incoming/outgoing
+traffic)
+\subsektion{SSL/TLS}
+Secure Sockets Layer, Transport Layer Security
+
+Provides secure (confidential and integrity-checked) stream on top of TCP and
+authentication of the server (usually) and the client (rarely)
+\begin{itemize}
+    \item server is usually a well-known entity
+    \item client is usually just some random person who doesn't need to be
+        authenticated, or use username/password to authenticate
+\end{itemize}
+HTTPS = HTTP on top of SSL/TLS
+
+Authentication of the server:
+\begin{itemize}
+    \item server signs transcript of DH handshake
+    \item how does client know server's public key? certificate authority
+    \begin{itemize}
+        \item problem with trusting certificate authority and compromises of the
+            certificate authorities
+        \item certificate authority needs to make sure that legitimate owner is
+            asking to get the certificate (need due diligence)
+        \item certificate authority can use root key to delegate power to
+            another key used to sign certificates and can sell this power
+            (PROBLEM! - no public accountability for these delegations)
+    \end{itemize}
+\end{itemize}
+\subsektion{IPSEC}
+Attempt to build integrity and confidentiality in at level of IP packets.
+It uses MAC and ESP (encrypted security payload), but is not widely emplyed
+today. Instead most new ideas address fixes at the SSL/TLS level.

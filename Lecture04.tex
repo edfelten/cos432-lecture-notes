@@ -1,0 +1,213 @@
+% Lecture 4: 26 September 2012
+\sektion{4}{Asymmetric key cryptography}
+Symmetric key: use the same key on both ends
+
+Problems:
+\begin{itemize}
+    \item Integrity: Alice sending to Bob, Charlie, Diana, ...
+
+        If Alice, Bob, Charlie, Diana all have key $k$, then Bob could compute
+        a MAC on a message and deliever a message to Charlie and Diana, thereby
+        forging a message
+
+        It would be nice if Alice were the only one who could send a verified
+        message without needing to append everyone's integrity key (one per
+        recipient)
+    \item Confidentiality: maybe only Alice should be able to decrypt a message
+\end{itemize}
+
+Asymetric scheme: 1976, Diffie-Hellman(-Cox for British military)
+\begin{itemize}
+\item One key for encrypting, another for decrypting
+\item One key for MAC, another for verifying it
+\end{itemize}
+
+\begin{definition}
+{\bf ``public-key'' cryptography}
+
+    Almost always:
+    \begin{itemize}
+        \item Generate key-pair such that can't derive one key from the other
+        \item One key is kept private (only Alice knows it)
+        \item Other key is public (everyone knows it)
+    \end{itemize}
+\end{definition}
+
+\subsektion{RSA algorithm}
+\begin{itemize}
+    \item Best-known, most used public key algorithm
+    \item 1978, Rivest-Shamir-Adleman
+\end{itemize}
+
+{\bf How it works:}
+
+To generate an RSA key pair,
+\begin{enumerate}
+    \item Pick large secret primes $p$, $q$ (randomly chosen, typically 2048
+            bits)
+
+        Done by generating odd numbers in range and testing if prime, throwing
+        away if not prime and trying again. Primes are dense enough that this
+        isn't too bad, and primality testing is also okay on time.
+    \item Define $N = pq$
+
+        Useful fact: if $p$, $q$ are prime, for all $0 < x < pq$,
+        $$x^{(p-1)(q-1)} \mod{pq} = 1$$
+    \item Pick $e$ such that $0 < e < pq$, $e$ relatively prime to $(p-1)(q-1)$
+    \item Find $d$ such that $ed \mod{(p-1)(q-1)} = 1$
+\end{enumerate}
+The public key is $(e, N)$ and the private key is $(d, N) [+(p,q)]$.
+
+To encrypt or decrypt with public key:
+$$\text{RSA}((e,N), x) = x^e \mod N$$
+To encrypt or decrypt with private key:
+$$\text{RSA}((d,N), x) = x^d \mod N$$
+
+\begin{theorem*}``It works''
+\end{theorem*}
+\begin{proof}
+    \begin{align*}
+    \text{RSA}&((e,N), \text{RSA}((d,N), x))\\
+    &= (x^d \mod{pq})^e \mod{pq}\\
+    &= x^{de} \mod{pq}\\
+    &= x^{a(p-1)(q-1)+1} \mod{pq} \text{, for some $a$}\\
+    &= (x^{(p-1)(q-1)})^a x \mod{pq}\\
+    &= (x^{(p-1)(q-1)} \mod{pq})^a x \mod{pq}\\
+    &= 1^a x \mod{pq}\\
+    &= x \mod{pq}\\
+    &= x \text{, given $0 < x < pq$}
+    \end{align*}
+\end{proof}
+Best known attack is to try factoring $N$ to get $p$, $q$
+\subsektion{Why not use public-key always?}
+\begin{itemize}
+    \item It's slow ($\sim$1000x slower than symmetric)
+    \item Key is big ($\sim$4k bits)
+\end{itemize}
+\subsektion{How to use public-key crpyto}
+For confidentiality: (``your eyes only'')
+\begin{itemize}
+    \item Encrypt with public key
+    \item Decrypt with private key
+\end{itemize}
+For integrity: (``digital signature'')
+\begin{itemize}
+    \item ``Sign'' by encrypting with private key
+    \item ``Verify'' by decrypting with public key
+\end{itemize}
+\subsektion{Secure RSA}
+!! Warning: Not secure as described above, need to fix !!\\
+
+Problem 1:
+
+Suppose $(e, N) = (3, N)$. Given ciphertext $8$ that was encrypted with $(3, N)$
+it's trivial that $x^3 \mod N =8$ has $x = 2$. This shows that you may run into
+trouble when encrypting small messages.\\
+
+Problem 2 (Malleability):
+\begin{align*}
+\text{RSA}&((d,N),x) \cdot \text{RSA}((d,N),y) \mod N\\
+&= (x^d \mod N)(y^d \mod N) \mod N\\
+&= (xy)^d \mod N\\
+&= \text{RSA}((d,N), xy)
+\end{align*}
+
+Adversary could use this to win the game defining security of the cipher
+
+\begin{definition}
+{\bf Malleability}
+
+Adversary can manipulate ciphertext, get predictable result for decrypted
+plaintext.
+
+This is usually bad, but sometimes we want a malleable cipher (for some
+application)
+\end{definition}
+
+Lesser problems:
+\begin{itemize}
+    \item Same plaintext results in same ciphertext (deterministic)
+    \item No built-in integrity check
+\end{itemize}
+
+To solve all these problems, add a preprocessing step before encryption. The
+standard way is call OAEP (Optimal Asymmetric Encyption Padding):
+\begin{enumerate}
+    \item Generate 128 bit random value, run through PRG $G$
+    \item XOR with message padded with 128 bits of zeros
+    \item Run result through PRF $H$, a hash function with announced key
+    \item XOR with the random bits
+    \item Concatenate result and send to RSA encyption
+\end{enumerate}
+
+\makebox[2cm]{}\makebox[1.5cm]{128 bits}\makebox[.5cm]{}\makebox[2cm]{128 bits}\\
+\framebox[3.5cm]{\makebox[2cm]{message}\textbar\makebox[1.5cm]{000...}}\makebox[.5cm]{}\framebox[2cm]{random}\\
+\makebox[6cm]{\makebox[3.5cm]{$\downarrow$}\makebox[.5cm]{}\makebox[2cm]{$\downarrow$}}\\
+\makebox[1.5cm]{}\makebox[.5cm]{$\oplus$}\makebox[2.8cm]{$\longleftarrow\quad G\quad\longleftarrow$}\makebox[.4cm]{$\downarrow$}\\
+\makebox[6cm]{\makebox[3.5cm]{$\downarrow$}\makebox[.5cm]{}\makebox[2cm]{$\downarrow$}}\\
+\makebox[1.5cm]{}\makebox[.5cm]{$\downarrow$}\makebox[2.8cm]{$\longrightarrow\quad H\quad\longrightarrow$}\makebox[.4cm]{$\oplus$}\\
+\makebox[1.5cm]{}\makebox[.5cm]{$\downarrow$}\makebox[2.8cm]{\rule[-0.1cm]{2.8cm}{0.01cm}}\makebox[.4cm]{$\downarrow$}\\
+\makebox[1.5cm]{}\makebox[.5cm]{}\makebox[2.8cm]{$\downarrow$}\makebox[.4cm]{}\\
+\makebox[1.5cm]{}\makebox[.5cm]{}\makebox[2.8cm]{to RSA encrpytion}\makebox[.4cm]{}\\
+
+Also add the reverse as a postprocessing step after decryption:
+
+\makebox[1.5cm]{}\makebox[.5cm]{}\makebox[2.8cm]{from RSA encrpytion}\makebox[.4cm]{}\\
+\makebox[1.5cm]{}\makebox[.5cm]{}\makebox[2.8cm]{$\downarrow$}\makebox[.4cm]{}\\
+\makebox[1.5cm]{}\makebox[.5cm]{$\downarrow$}\makebox[2.8cm]{\rule[0.3cm]{2.8cm}{0.01cm}}\makebox[.4cm]{$\downarrow$}\\
+\makebox[1.5cm]{}\makebox[.5cm]{$\downarrow$}\makebox[2.8cm]{$\longrightarrow\quad H\quad\longrightarrow$}\makebox[.4cm]{$\oplus$}\\
+\makebox[6cm]{\makebox[3.5cm]{$\downarrow$}\makebox[.5cm]{}\makebox[2cm]{$\downarrow$}}\\
+\makebox[1.5cm]{}\makebox[.5cm]{$\oplus$}\makebox[2.8cm]{$\longleftarrow\quad G\quad\longleftarrow$}\makebox[.4cm]{$\downarrow$}\\
+\makebox[6cm]{\makebox[3.5cm]{$\downarrow$}\makebox[.5cm]{}\makebox[2cm]{$\downarrow$}}\\
+\framebox[3.5cm]{\makebox[2cm]{$m'$}\textbar\makebox[1.5cm]{$z'$}}\makebox[.5cm]{}\framebox[2cm]{$r'$}\\
+
+Reject if $z'$ is not all zero, otherwise throw away $r'$ and let $m'$ be the
+result of the decyption. $m'$ should at this point be equal to the original
+message.
+
+Other things to clean up:
+\begin{itemize}
+    \item Key size
+    \begin{itemize}
+        \item To get a big enough key space, need lots of possible primes
+        \item Factoring is better than brute force
+        \item Factoring algorithms might get better, so build in cushion in key
+            size to account for incremental improvements in these algorithms.
+        \item Today, 2048-bit primes seem okay
+    \end{itemize}
+    \item Useful performance trick
+    \begin{itemize}
+        \item $e = 3$ and make sure $p$ and $q$ are chosen
+    such that 3 is relatively prime to $p-1$ and $q-1$
+        \item This is extra-big win
+    for digital signatures since verify is the common case.
+        \item But: what if OAEP disappears from your code?
+
+        Use $e=65537=2^{16} + 1$ instead
+    \end{itemize}
+    \item Hybrid crypto: To encrypt a large message,
+    \begin{itemize}
+        \item Generate random symmetric key $k$
+        \item Encrypt $k$ with RSA
+        \item Encrypt message with $k$
+    \end{itemize}
+        Sometimes share the symmetric key using RSA and use that to generate
+        further keys to avoid using public-key crypto more than necessary
+    \item Hybrid digital signatures: RSAsign(Hash(message))
+    \item Claimed identities\\
+        Suppose we get a message from ``Alice'' with a digital signature $m^d
+        \mod N$. We can verify using $(m^d \mod N)^e \mod N$, but how can we be
+        sure of Alice's public key if we don't know Alice?
+
+        Use a digitial certificate (``cert''):
+        \begin{itemize}
+            \item Bob signs a message saying ``Alice's public key is (...)''
+            \item This works if we know Bob and believe him to be trustworthy
+                and competent.
+            \item If we don't know Bob, then we need to ask Charlie if Bob is
+                trustworthy and compentent.
+            \item But if we don't know Charlie...
+            \item Most common solution: pick universally trustworthy
+                ``certificate authority'' who gives out keys
+        \end{itemize}
+\end{itemize}
