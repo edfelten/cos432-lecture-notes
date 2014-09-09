@@ -12,6 +12,8 @@ help from Anna Kornfeld Simpson '14 and Connie Wan '13, for
 the Fall 2012 offering of COS 432.  Further contributors are
 reflected in the github revision history.
 
+This work is copyrighted by its authors.
+For information on licensing of this work, see the file LICENSE.
 
 
 
