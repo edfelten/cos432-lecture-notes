@@ -83,7 +83,16 @@ dependencies:
         sudo apt-get install texlive-base texlive-latex3 texlive-math-extra texlive-latex-extra
 
 - MacOSX: Help your classmates by submitting a pull request with this info
-- Windows: Help your classmates by submitting a pull request with this info
+- Windows: 
+	- If your LaTeX environment is a recent version of [MiKTeX](http://miktex.org/), you can install the necessary dependencies using the MiKTeX Package Manager.
+	- Run the MiKTeX Package Manager with administrator privileges either via the start menu or by finding the executable in the folder you installed MiKTeX in, under `miktex\bin\mpm_mfc_admin.exe`. 
+	- After opening, first synchronize your packages with the remote repository by going to the "Repository" menu and selecting "Synchronize".
+	- Then find and install the following packages by right clicking on their names and selecting "Install":
+		- `amsmath`
+		- `amscls`
+ 
+		> Note that this may not be an exhaustive list of all dependencies required. If the build finds other missing dependencies, try searching for the names of the missing packages (denoted by files ending in .sty) using the "Keywords" box in the Package Manager. If any packages are found for the search, try installing those as well. 
+	- The next time you execute `pdflatex InfoSec`, the packages should be configured and the course notes should be build properly.
 
 Contributors and License
 ------------------------
