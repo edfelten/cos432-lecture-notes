@@ -3,7 +3,7 @@ COS 432 - Lecture Notes
 
 Student-created lectures notes for COS 432: Information Security
 at Princeton University. To access the notes, you should install
-[git](http://git-scm.com/book/en/Getting-Started-Installing-Git) and
+[git](http://git-scm.com/book/en/Getting-Started-Installing-Git) and 
 [LaTeX](https://en.wikibooks.org/wiki/LaTeX/Installation).
 If you wish to contribute to the notes, you will need to configure git to
 [authenticate with Github](https://help.github.com/articles/set-up-git#next-steps-authenticating-to-github-from-git)
@@ -31,8 +31,8 @@ lectures.
 Contribute
 ----------
 If you'd like to make changes to the notes, you will have to do so in your own
-repository and create a [pull request](https://help.github.com/articles/using-pull-requests).
-First, you need to `fork` the repository on Github.
+repository and create a [pull request](https://help.github.com/articles/using-pull-requests). 
+First, you need to `fork` the repository on Github. 
 
 - Navigate to the [repository page](https://github.com/ewfelten/cos432-lecture-notes)
 - Click the fork button and follow the instructions ![fork
@@ -48,19 +48,19 @@ First, you need to `fork` the repository on Github.
 - Make changes to relevant `.tex` files
 - Build your changes using `pdflatex InfoSec` and make sure they look correct
 - Commit your local changes
-
+        
         git add -A .
         git commit -a -m "A SUMMARY OF YOUR CHANGES"
 
 - Sync your repo with upstream changes (you may need to
     [fix conflicts](https://stackoverflow.com/questions/161813/fix-merge-conflicts-in-git))
-
+        
         git fetch upstream
         git checkout master
         git merge upstream/master
 
 - Once merges are done, push your changes to your remote fork on Github
-
+        
         git push origin master
 
 - On the Github page for your forked repository, you can then create a pull
@@ -78,12 +78,21 @@ Your default latex install may not include all the required packages. You
 should install the following packages to ensure you have the proper
 dependencies:
 
-- Debian-based Linux:
+- Debian-based Linux: 
 
         sudo apt-get install texlive-base texlive-latex3 texlive-math-extra texlive-latex-extra texlive-pstricks
 
 - MacOSX: Help your classmates by submitting a pull request with this info
-- Windows: Help your classmates by submitting a pull request with this info
+- Windows: 
+	- If your LaTeX environment is a recent version of [MiKTeX](http://miktex.org/), you can install the necessary dependencies using the MiKTeX Package Manager.
+	- Run the MiKTeX Package Manager with administrator privileges either via the start menu or by finding the executable in the folder you installed MiKTeX in, under `miktex\bin\mpm_mfc_admin.exe`. 
+	- After opening, first synchronize your packages with the remote repository by going to the "Repository" menu and selecting "Synchronize".
+	- Then find and install the following packages by right clicking on their names and selecting "Install":
+		- `amsmath`
+		- `amscls`
+ 
+		> Note that this may not be an exhaustive list of all dependencies required. If the build finds other missing dependencies, try searching for the names of the missing packages (denoted by files ending in .sty) using the "Keywords" box in the Package Manager. If any packages are found for the search, try installing those as well. 
+	- The next time you execute `pdflatex InfoSec`, the packages should be configured and the course notes should be build properly.
 
 Contributors and License
 ------------------------
