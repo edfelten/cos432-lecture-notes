@@ -80,7 +80,7 @@ dependencies:
 
 - Debian-based Linux: 
 
-        sudo apt-get install texlive-base texlive-latex3 texlive-math-extra texlive-latex-extra
+        sudo apt-get install texlive-base texlive-latex3 texlive-math-extra texlive-latex-extra texlive-pstricks
 
 - MacOSX: Help your classmates by submitting a pull request with this info
 - Windows: 
