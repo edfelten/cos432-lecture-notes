@@ -109,24 +109,25 @@ Help your classmates by submitting a pull request with this info
     by going to the "Repository" menu and selecting "Synchronize".
 - Then find and install the following packages by right clicking on their 
     names and selecting "Install":
-        - `amsmath`
-        - `amscls`
-        - `mathtools`
-        - `fancybox`
-        - `pgf`
-        - `xcolor`
-        - `rotating`
-        - `url`
-        - `fancyhdr`
-        - `mptopdf`
+    - `amsmath`
+    - `amscls`
+    - `mathtools`
+    - `fancybox`
+    - `pgf`
+    - `xcolor`
+    - `rotating`
+    - `url`
+    - `fancyhdr`
+    - `mptopdf`
 
-        > Note that this may not be an exhaustive list of all
-        dependencies required. If the build finds other missing
-        dependencies, try using the Install button on the MiKTeX popup
-        window. Alternatively, try searching for the names of the 
-        missing packages (denoted by files ending in .sty) using the 
-        "Keywords" box in the Package Manager. If any packages are found 
-        for the search, try installing those as well. 
+    > Note that this may not be an exhaustive list of all
+    > dependencies required. If the build finds other missing
+    > dependencies, try using the Install button on the MiKTeX popup
+    > window. Alternatively, try searching for the names of the 
+    > missing packages (denoted by files ending in .sty) using the 
+    > "Keywords" box in the Package Manager. If any packages are found 
+    > for the search, try installing those as well. 
+
 - The next time you execute `pdflatex InfoSec`, the packages should be configured 
     and the course notes should be build properly.
 
