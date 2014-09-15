@@ -29,34 +29,35 @@ From last time, got that PRF works as MAC.
 \end{itemize}
 
 \begin{definition}
-PRG is {\bf secure} if indistinguishable from a truly random value/string.\\
-This is based on the game versus Mallory (can Mallory tell real randomness from
-PRG?), where secure means that Mallory wins 50\% ($+\epsilon$) assuming Mallory
-has limited resources.
+PRG is {\bf secure} if indistinguishable from a truly random
+value/string.\\ This is based on the game versus Mallory (can Mallory
+tell real randomness from PRG? Similar to PRF game from lecture 1),
+where secure means that Mallory wins 50\% ($+\epsilon$) assuming
+Mallory has limited resources.
 \end{definition}
 
 Another desireable property is Forward Secrecy:\\
 If Mallory compromises the hidden state of the generator at time $t$, Mallory
-can't reconstruct past outputs of the generator.\\
+can't backtrack to reconstruct past outputs of the generator.\\
+
+Most PRGs are made up of an \textbf{init} function to initialize state
+$S$ and an \textbf{advance} function to step to a new state.
+
 \begin{example}{A PRG that is \underline{not} FS but is secure:}
     \begin{itemize}
     \item Let $f$ be a PRF
-    \item output = $f(\text{seed}, 0) || f(\text{seed}, 1) || f(\text{seed}, 2)
-        || \cdots$
-    \item hidden state = seed, counter
+    \item init: $(seed, 0)$
+    \item advance: $(seed, k) \rightarrow (seed, k + 1)$
+    \item output: $f(seed, k)$
     \end{itemize}
 \end{example}
 
 \begin{example}{A PRG that is FS and secure:}
     \begin{itemize}
     \item Let $f$ be a PRF
-    \item to initialize: state $\leftarrow$ seed
-    \item to generate output:
-    \begin{enumerate}
-        \item out $\leftarrow$ $f(\text{state}, 0)$
-        \item state $\leftarrow$ $f(\text{state}, 1)$
-        \item return out
-    \end{enumerate}
+    \item init: $seed$
+    \item advance: $S \rightarrow f(S, 0)$
+    \item output: $f(S, 1)$
     \end{itemize}
 \end{example}
 
@@ -70,27 +71,37 @@ Getting a good seed: want true randomness
 \end{itemize}
 problems: not \emph{truly} random (correlations)\\
 
-Alternate view: gather data unpredictable to adversary
+Alternate view: \textbf{collect} data unpredictable to adversary
 \begin{itemize}
     \item exact history of key presses
     \item exact path of mouse
-    \item periodic screenhot
+    \item exact history of packet traffic
+    \item periodic screenshot
     \item internal temperature
     \item ambient audio
 \end{itemize}
-Then: distill down to ``pure'' randomness - feed it all into a PRF. If there's
-enough randomness in input, output will be ``pure random''.\\
-Use this to:
+
+
+Then: process to \textbf{extract}, or distill down to ``pure''
+randomness - feed it all into a PRF. If there's enough randomness in
+input, output will be ``pure random''.  Can, for example, do
+SHA256(all the data).\\
+
+ Use this to:
 \begin{itemize}
     \item seed the system PRG
     \item renew the state (mix fresh randomness in with hidden state) using PRF,
         to re-establish secrecy of hidden state -- do as a precaution\\
 
-        NOTE: adding a single bit at a time, Mallory can keep up since once 2
-        possiblities, but if we wait until have a lot, say 256 bits of
-        randomness, then Mallory can't keep up ($2^{256}$ possibilities), even
-        knowing the algorithm/system since that's usually standard
+        NOTE: Mistake to add a single bit at a time since Mallory can keep
+        up with 2 possibilities at a time, but if we wait until have a
+        lot, say 256 bits of randomness, then Mallory can't keep up ($2^{256}$
+        possibilities), even knowing the algorithm/system since that's usually
+        standard
 \end{itemize}
+
+Hard to estimate actual amount of entropy in pool, so wait for too
+much randomness before mixing to remain conservative.
 
 {\bf Linux}:
 \begin{itemize}
@@ -136,19 +147,20 @@ Goal: ciphertext does not convey anything about plaintext
     {\bf ``encryption game'' against Mallory:}
 
     \hspace*{0.5 cm} Mallory chooses two pieces of plaintext\\
-    \hspace*{0.5cm} We flip a coin and encrpyt one of them\\
+    \hspace*{0.5cm} We flip a coin and encrypt one of them\\
     \hspace*{0.5cm} Mallory guesses which was encrypted: wins if right
 
-    We say that the encrpytion method is secure if Mallory can't do better than
-    random guessing (50/50) + $\epsilon$.\\
+    We say that the encrpytion method is secure if Mallory can't do
+    better than random guessing (50/50) + $\epsilon$.  This is known as
+    \textbf{semantic security}.\\
 
-    Note: if we were being more rigorous in our difinitions, we would use a
+    Note: if we were being more rigorous in our definitions, we would use a
     stronger definition of security for encryption here so that it's easier to
     combine later with integrity. However, the methods we are learning are
     secure by any of the definitions.
 }
 
-First approach: one-time pad
+First approach: one-time pad (known to be semantically secure)
 \begin{enumerate}
     \item Alice and Bob jointly generate a long random string $k$ (``the pad'')
     \item $E(k, x) = k \xor x$
@@ -165,11 +177,25 @@ Problems:
 \end{enumerate}
 Idea: use a PRG to ``stretch'' a small key (called a ``stream cipher'')
 \begin{itemize}
-    \item Alice and Bob run parallel PRG's with same key
+    \item Start with fixed-size random $k$, add a ``nonce'': unique,
+      but not secret.  Use (k || nonce) to seed a PRG.
+    \item Alice and Bob run identical PRGs in parallel with same key
     \item xor messages with PRG's output
+    \item Do not re-use (key, nonce) pair
 \end{itemize}
 
 \subsektion{Confidentiality and integrity}
+Few approaches.
+\begin{enumerate}
+  \item Use E(x $||$ M(x)) (done by SSL/TLS).
+  \item Use E(x) $||$ M(E(x)) (done by IPSec).  This is the winner (because math).
+  \item Use E(x) $||$ M(x) (done by IPSec).
+\end{enumerate}
+
+\begin{theorem}
+If E is a semantically secure cipher, and M is a secure MAC, then \#2 is secure.
+\end{theorem}
+
 Encrypt plaintext, then append MAC: Bob first integrity checks, then decrypts.
 Note that we need to use separate keys for confidentiality and integrity, and a
 separate set of two keys for reverse channel (Bob to Alice).\\
