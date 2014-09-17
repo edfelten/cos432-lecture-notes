@@ -41,6 +41,22 @@ Want: psuedorandom permutation (PRP)
         indistinguishable from truly random to an adversary
 \end{itemize}
 
+It is useful to compare the different types of security functions we have
+seen. Note: Can use any of PR function/permutation/generator to build
+the other two.
+
+\begin{center}
+\begin{tabular}{l|llll}
+ Property    &  PR Functions         &  PR Permutations  &  PR Generators  &  Hash Functions       \\
+\hline
+ Input       &  Any                  &  Fixed-size       &  Fixed-size     &  Any                  \\
+ Output      &  Fixed-size           &  Fixed-size       &  Any            &  Fixed-size           \\
+ Has Key     &  Yes                  &  Yes              &  Yes            &  No                   \\
+ Invertible  &  No                   &  With key         &  No             &  Depends              \\
+ Collisions  &  Yes, but can't find  &  No               &  No             &  Yes, but can't find  \\
+\end{tabular}
+\end{center}
+
 Challenge: design a very hairy function that's invertible, but only by someone
 who knows the key. A PRP will have this property.\\
 
@@ -67,7 +83,7 @@ How to get these properties: Feistel network
 
 Add as many rounds as you want, alternating left and right rounds.\\
 
-Why? easy to invert since each round is its own inverse, so inverse of series
+Why? Easy to invert since each round is its own inverse, so inverse of series
 of rounds is the same series in reverse order. This makes it so that $f$ can be
 as difficult as we want and the process is still invertible, so why not make $f$
 a PRF?\\
@@ -75,7 +91,7 @@ a PRF?\\
 \begin{theorem*}
 If $f$ is a PRF, then 4-round feistel network is a PRP.
 \end{theorem*}
-Often use weaker rounds, but more of them.
+Often use weaker rounds (which may be faster to compute), but more of them.
 
 \begin{example}{DES (Data Encryption Standard)}
     \begin{itemize}
@@ -119,7 +135,7 @@ Often use weaker rounds, but more of them.
             run by NIST and a design contest judged on pre-determined criteria
     \end{itemize}
 
-    2002 - NIST chose Rijndeal (Belgian designers)
+    2002 - NIST chose Rijndael (Belgian designers)
 \end{example}
 
 \subsektion{128-bit AES}
@@ -146,7 +162,7 @@ Often use weaker rounds, but more of them.
             \item linear mix (``diffusion''):
 
                 take each column, treat as 4-vector and multiply by a certain
-                matrix
+                matrix (specified in standard)
 
                 mixes within column
             \item key-addition step (key-dependent):
@@ -177,8 +193,8 @@ Padding: most important property needs to be that recipient can unambiguously
 \bigskip
 Cipher modes: encrypt multi-block messages
 \begin{itemize}
-    \item ECB (Electronic Code Book) !! BAD - do not use !!
-        $$C_i = E(k, P_i$$
+    \item ECB (Electronic Code Book) !! BAD - not semantically secure - do not use !!
+        $$C_i = E(k, P_i)$$
         Same plaintext results in same ciphertext -- leaks information to
         adversary
     \item CBC (Cipher Block Chaining): Common, pretty good\\
@@ -192,11 +208,12 @@ Cipher modes: encrypt multi-block messages
         $C_{-1}$. Don't want to reuse with same key, or adversary could compare
         the first block of the ciphertext to see if same plaintext, but
         random-ish generation good enough, and can use same key over and over.
-    \item CTR (Counter mode): Generally agreed on as best to use
+    \item CTR (Counter mode): Generally agreed on as best to use.
+        Similar to a stream cipher.
         $$C_i = E(k, \text{messageid} || \text{counter}) \xor P_i$$
         messageid must be unique, then it's okay to reuse key.\\
         Note: this would not be forward secret as a PRG.\\
         Reasons to use CTR over PRG: more efficient on commodity hardware and
         perhaps you trust AES more than your PRF (even though you can't prove it
-        either way)
+        either way).
 \end{itemize}
