@@ -24,23 +24,35 @@ Three basic approaches, relying on
     \item something you \underline{are} (``biometrics'')
 \end{enumerate}
 \subsektion{Something you know: passwords}
+Password threat model:
+\begin{itemize}
+    \item user picks a password and remembers it
+    \item to log in, user gives name, password
+    \item adversary wants to log in as user
+    \item adversary \underline{might} be able to compromise server
+\end{itemize}
 First approach:
 \begin{itemize}
-    \item server has database of (name, password) pairs
-    \item to log in, user gives name, password
+    \item server has "password database" of (name, password) pairs
     \item system verifies match
+    \item Drawback: if adversary sees database, he/she can impersonate any user
 \end{itemize}
 Attacks (to get a user's password):
 \begin{itemize}
-    \item trick the user into telling you -- surprisingly effective (``social
+    \item trick the user, or someone else who knows the password, into telling you -- surprisingly effective (``social
             engineering'')
     \item impersonate server, get user to ``log in'' to you (``spoofing'',
             ``phishing'')
-    \item online guessing, try to log in with guessed name and password
+    \item online guessing: try to log in with guessed name and password
+    \item offline guessing: get password DB, computational search over passwords
     \item if user wrote down password, read it
-    \item get a copy of password database (somehow)
     \item change the password database (somehow)
     \item watch the user log in, see what user types (``shoulder surfing'')
+    \item compromise the user's device (somehow) and record actions (e.g. "key logging")
+    \item get user's password from one site, and try it on another
+    	\begin{itemize}
+		\item most users have between 3-5 passwords they reuse
+	\end{itemize}
 \end{itemize}
 Countermeasures:
 \begin{itemize}
@@ -48,10 +60,16 @@ Countermeasures:
             ``AOL will never ask you for your password)
     \item make guessing harder
     \begin{itemize}
+    	\item implement a time delay after password failure (e.g. 2 seconds); this will slow down guessing attacks
         \item limit number of failed attempts (``velocity control''), only for
                 online guessing
         \item avoid informative error message if user fails to log in (so don't
                 say username was right but password wrong)
+        \item vs. offline guessing: slow down the verification code
+        	\begin{itemize}
+		\item compute $Hash^n$(PRF(...)) to verify password
+		\item might slow verification by a factor of 1000
+	\end{itemize}
             % tricky example: password doesn't match or memory error if does 
             % character-by-character comparison and put your password right
             % before unaccessible memory location so it'll memory error if first
@@ -64,13 +82,15 @@ Countermeasures:
             common passwords and build a handy retrieval data structure
     \item to frustrate dictionary attacks, use a ``salt'': for each user,
             generate a random value $S_u$, then store in password database
-            (name, $S_u$, Hash(name || $S_u$ || password))
+            (name, $S_u$, Hash(password, $S_u$ || password))
 
             Then an attacker would need to build a dictionary for each user
 
             Note that salt is in password database and it is convenient to keep
             secret, but hopefully password is strong enough for this to be okay
             even if the salt is leaked
+            
+            Note: in this model, the server doesn't store password
 \end{itemize}
 Guessing is a serious problem in practive: people pick lousy passwords, and
 attackers get more powerful all the time by Moore's law
@@ -80,11 +100,19 @@ attackers get more powerful all the time by Moore's law
 % Some study on univeristy passwords gave for one univeristy beer, love, hockey,
 % jesus top passwords
 
+Reducing guessability:
+\begin{itemize}
+	\item hard to quantify guessability
+	\item only sure way: make password random, chosen from a large space (these are usually hard to remember)
+	\item format rules (e.g. special character and at least one uppercase character)
+	\item require password to be longer (probably better than format rules)
+\end{itemize}
+
 Password hygiene
 \begin{itemize}
     \item like key hygiene
     \item avoid patterns (``password1'', ``password2'', ...)
-    \item expire idle sessions
+    \item expire idle sessions (walk-away problem)
     \item require old password to change password
 \end{itemize}
 
@@ -100,11 +128,23 @@ What if user forgets password?
 
 Preventing spoofing:
 \begin{itemize}
+     \item multi-factor authentication: password + something else (e.g. token, app) 
+     \item Evidence-based (Bayesian) authentication: treat password entry as evidence, but not 100\% certainty
+     	\begin{itemize}
+	\item then use as much other evidence as possible (e.g. geolocation)
+	\item other examples: device identity, software version, behavior patterns (especially atypical behavior)
+	\item if confidence is too low, get more evidence
+	\end{itemize}
     \item distinctive per-user display
     \item distinctive unspoofable action before login
 
         Windows CTRL-ALT-DEL before every time you enter password, always taking
         you to legitimate login screen
+    \item challenge-response protocol: (sign a challenge value)
+    	\begin{itemize}
+	\item advantage: eavesdropper can't replay a log-in session
+	\item spoofer can't impersonate the user later
+	\end{itemize}
     \item use one-time-passwords
 
         security advantage, but logistical disadvantages: server has to serve
@@ -114,14 +154,13 @@ Preventing spoofing:
         $x_{n-1}, x_{n-2}, \dots, x_0$ in this order, and the server checks that
         each password is the hash of the next password. User remembers $x_0$
         and where in chain they are.
-    \item challenge-response protocol: (sign a challenge value)
         \begin{table}\centering\begin{tabular}{ccc}
             user & & system\\
             \hline
-            private key & & user's public key\\
+            password (p) & & random challenge (r) \\
             & $\xrightarrow{\text{name}}$ & \\
             & $\xleftarrow{r \text{ (random)}}$ & \\
-            & $\xrightarrow{\text{sign} (r)}$ &
+            & $\xrightarrow{\text{PRF} (p,r)}$ &
         \end{tabular}\end{table}
     \item password + Diffie-Hellman: SPEKE (Simple Password Exponential Key
             Exchange)
@@ -144,9 +183,8 @@ It does crypto to prove the user has it.
 \begin{definition}{biometric}
 
 Measuring aspect of user's body: fingerprint, iris scan, retina scan, finger
-length, voice properties, facial features
+length, voice properties, facial features, hand geometry, typing patterns, gait
 \end{definition}
-
 Basic scheme:
 \begin{itemize}
     \item enroll user: take a few measurements, compute ``exemplar''
@@ -157,8 +195,9 @@ Basic scheme:
 \end{itemize}
 Drawbacks:
 \begin{itemize}
-    \item hard/impossible to follow good key hygiene
+    \item hard/impossible to follow good key hygiene (can't change aspects of user's body)
     \item often requires physical presence
     \item spoofing attacks; make image of body part, faking tempertature,
             inductance, etc. (melted gummy bears moulded into finger-shape...)
+    \item measurement is only approximate (need to control false positives and false negatives)
 \end{itemize}
