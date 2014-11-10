@@ -1,4 +1,4 @@
-% Lecture 10: 22 October 2012
+% Lecture 10: 10 November 2014
 \sektion{11}{Spam}
 Focus on email.
 
@@ -51,6 +51,8 @@ Most of the cost falls on recipient
     \item Needs to store message
     \item Human takes the time to actually read the message
 \end{itemize}
+Sender will send when sender's cost $<$ sender's benefit. 
+What we would like: send when total cost $<$ total benefit.
 
 \subsektion{Anti-spam strategies}
 Laws, technology, or combination
@@ -94,7 +96,9 @@ Note that most spam is already illegal (either fraudulent offer, false
 
 Any commercial, non-political email is spam unless:
 \begin{enumerate}[(a)]
-    \item recipient has explicitly consented, or
+   \item it's non-commercial, or
+   \item it's political speech, or
+    \item recipient has explicitly consented to receive it, or
     \item sender has a continuing business relationship with recipient, or
     \item email relates to an ongoing commercial transaction between the sender
         and receiver
@@ -117,8 +121,10 @@ Private lawsuits
     \item ISP sue spammer to cover their server resources, etc.
 
     (AOL: sue spammers and give a random user their stuff!)
-    \item Serves as a deterrent
+    \item Serves as a deterrent (expensive to bring lawsuit)
 \end{itemize}
+
+Laws have succeeded in drawing a line between spam and legitimate businesses. 
 
 Anti-spam technologies:
 \begin{itemize}
@@ -143,6 +149,7 @@ Anti-spam technologies:
                  %and someone linked to that post then sent it to a friend who
                  %marked it as spam and couldn't unreport; blacklisted 2 weeks)
         \end{itemize}
+        Denial of service: forge spam "from" victim
     \item Whitelist:
 
         List of people you know, reject email from everybody else
@@ -151,7 +158,7 @@ Anti-spam technologies:
             \item But: can combine with other countermeasures (exempt certain
                     people from another countermeasure)
         \end{itemize}
-    \item Require payment:
+    \item Require payment (Pay-to-send):
         \begin{itemize}
             \item Pay in money:
 
@@ -174,8 +181,19 @@ Anti-spam technologies:
 
                 Can hire solving of CAPTCHAs in various ways (sweatshops, make
                     people solve to see porn, ...)
+                 
+             \item Pros and Cons
+                		 \begin{enumerate}[(a)]
+  			 \item raises cost of spamming (+)
+  			 \item often raises cost of legit mail (-)
+  			 \item often wastes resources rather than transferring them (-)
+			\end{enumerate}
         \end{itemize}
     \item Sender authentication
+    	\begin{itemize}
+			\item address-based (e.g. Princeton says which IPs can send @princeton.edu From address)
+			\item signature by domain owner
+	\end{itemize}
     \item Content-based filtering:
 
         Recipient applies filter algorithm ot content of incoming email
