@@ -1,7 +1,6 @@
 %!TEX root = InfoSec.tex
-% Lecture 10: 22 October 2012
-\sektion{11}{Spam}
-Focus on email.
+% Lecture 16: 10 November 2014
+\sektion{16}{Spam}
 
 Scope of problem:
 \begin{itemize}
@@ -14,7 +13,7 @@ Scope of problem:
             profit)
 \end{itemize}
 
-\sidenote{{\bf Review: how email works}
+\sidenote{{\bf How email works}
 \begin{itemize}
     \item Messages written in standard format
         \begin{itemize}
@@ -29,12 +28,14 @@ Scope of problem:
         \framebox{\parbox[c]{2cm}{recipient's computer}}
 
         (MTA: Mail Transfer Agent)
+
     \item Webmail model:
 
         \framebox{\parbox[c]{2cm}{sender's computer}} $\xrightarrow{\text{HTTP(S)}}$
         \framebox{\parbox[c]{2cm}{sender's mail\\service}} $\xrightarrow{\text{SMTP}}$
         \framebox{\parbox[c]{2cm}{recipient's mail\\service}} $\xrightarrow{\text{HTTP(S)}}$
         \framebox{\parbox[c]{2cm}{recipient's computer}}
+
     \item More complexities:
         \begin{itemize}
             \item Forwarding
@@ -44,7 +45,7 @@ Scope of problem:
 \end{itemize}
 }
 
-\subsektion{Economics of spam}
+\subsektion{Spam as a market failure}
 It is very cheap to send email.
 
 Most of the cost falls on recipient
@@ -56,8 +57,7 @@ Most of the cost falls on recipient
 \subsektion{Anti-spam strategies}
 Laws, technology, or combination
 
-Note that most spam is already illegal (either fraudulent offer, false
-    adverising, or offering an illegal product).
+Note that most spam is already illegal (either fraudulent offer, false adverising, or offering an illegal product).
 
 \begin{definition}{Spam}
 \begin{enumerate}
@@ -66,16 +66,14 @@ Note that most spam is already illegal (either fraudulent offer, false
         Problems:
         \begin{itemize}
             \item Defined after the fact
-            \item Legally problematic (anyone can say they didn't want some
-                    message)
+            \item Legally problematic (anyone can say they didn't want some message)
             \item Not what you want (just not wanting it doesn't make it spam)
         \end{itemize}
     \item Unsolicited email
 
         Problems:
         \begin{itemize}
-            \item What does this mean? (May not explicitly have asked for a
-                    given email)
+            \item What does this mean? (May not explicitly have asked for a given email)
             \item Lots of unsolicited email is wanted
         \end{itemize}
     \item Unsolicited commercial email
@@ -97,14 +95,13 @@ Any commercial, non-political email is spam unless:
 \begin{enumerate}[(a)]
     \item recipient has explicitly consented, or
     \item sender has a continuing business relationship with recipient, or
-    \item email relates to an ongoing commercial transaction between the sender
-        and receiver
+    \item email relates to an ongoing commercial transaction between the sender and receiver
 \end{enumerate}
 \end{definition}
-Note: this definition is not testable in software.
+None of which can really be distinguished/enforced with software.
 
-Vigorous enforcement against wire fraud, false medical claims, etc. (can follow
-the money)
+There exists vigorous enforcement against wire fraud, false medical claims, etc. because it's relatively easy to follow
+the money.
 
 Law against forging the From address is surprisingly effective\\
 Disadvantages for spammer:
@@ -125,32 +122,26 @@ Anti-spam technologies:
 \begin{itemize}
     \item Blacklist:
 
-        List of ``known spammers'', refuse to accept mail from them
+        List of ``known spammers'', refuse to accept mail from them (usually by silently discarding them)
         \begin{itemize}
-            \item If list holds From addresses: Spammer will spoof From address
-                (then spammer is also breaking the law)
-            \item If list holds IP addresses: Spammers move around, compromise
-                innocent users' machines and send spam from there (very common);
+            \item If list holds From addresses: Spammer will spoof From address (though then spammer is also breaking the law)
+            \item If list holds IP addresses: Spammers move around, compromise innocent users' machines and send spam from there (very common);
+                
                 also note that outgoing email IP address is often shared
         \end{itemize}
         How aggressive should you be about putting people on the blacklist?
         \begin{itemize}
             \item Too slow: spammers can get away with spamming
             \item Too quick: false blocking
-                %(Felten's domain blocked on SpamCop's list of banned IP
-                 %addresses, got cancelled by webhosting company for policy
-                 %violation -- had never sent an email from that domain, so had a
-                 %good argument against being a spammer; had written a blog post,
-                 %and someone linked to that post then sent it to a friend who
-                 %marked it as spam and couldn't unreport; blacklisted 2 weeks)
+            \item Also need to worry about DoS attack; forge spam ``from'' the victim
         \end{itemize}
     \item Whitelist:
 
         List of people you know, reject email from everybody else
         \begin{itemize}
-            \item Blocks too much
-            \item But: can combine with other countermeasures (exempt certain
-                    people from another countermeasure)
+            \item Blocks too much if you forget to add people to your ``allow'' list
+            \item But: can combine with other countermeasures (exempt certain people from another countermeasure)
+            \item Better: allow from a trusted list and be more skeptical of others
         \end{itemize}
     \item Require payment:
         \begin{itemize}
@@ -173,13 +164,15 @@ Anti-spam technologies:
                 CAPTCHA %(Completely Automated Public Turing test to tell
                         %Computers and Humans Apart)
 
-                Can hire solving of CAPTCHAs in various ways (sweatshops, make
-                    people solve to see porn, ...)
+                Can hire solving of CAPTCHAs in various ways (sweatshops, make people solve to see porn, ...)
         \end{itemize}
+        General problems: often raises cost of legit mail, hard on legit mailing lists, often wastes resources rather than transferring them, spammers sometimes willing to pay anyways because it often costs them less
     \item Sender authentication
+
+        Address-based: princeton.edu says which IPs can send a @princeton.edu ``From'' address. 
     \item Content-based filtering:
 
-        Recipient applies filter algorithm ot content of incoming email
+        Recipient applies filter algorithm to content of incoming email
         \begin{itemize}
             \item Early days: keyword-based
 
@@ -190,9 +183,8 @@ Anti-spam technologies:
                 Spammer can test the non-personalized part by making an account
                 and seeing what gets marked as spam -- until filters started
                 looking for the word-salad test messages
-            \item Collaborative filtering: use other users' reports as indicator
-                of spam
+            \item Collaborative filtering: use other users' reports as indicator of spam
         \end{itemize}
 \end{itemize}
 
-Robocalls now a huge problem: FTC gave public challenge to solving this
+Robocalls now a huge problem: FTC gave public challenge to solving this. A kind of fun defense? Pretend to beep and be an answering machine.
