@@ -1,8 +1,9 @@
-% Lecture 1: 17 September 2012
+%!TEX root = InfoSec.tex 
+% Lecture 1: 10 September 2014
 \sektion{0}{Course Information}
 Professor: Ed Felten
 
-Website: \url{http://bit.ly/Ribzeh} and Piazza
+Website: \url{http://bit.ly/1wcHQIT} and Piazza
 
 Lectures: 11am Monday, Wednesday in McCosh 50
 
@@ -12,12 +13,13 @@ Lectures: 11am Monday, Wednesday in McCosh 50
     \ovalbox{Mallory} $\xrightarrow{?}$
     \ovalbox{Bob}
 
-Assume: ({\bf threat model}, what adversary can do and accomplish; always assume
+{\bf Threat Models:}, what adversary can do and accomplish vs. what we want to do and accomplish. We generally assume
          that Mallory is malicious in the most devious possible way, as opposed
-         to random error)
+         to random error. In this case of Alice sending Bob a message: 
 \begin{itemize}
     \item Mallory can see and forge messages
     \item Mallory wants to get Bob to accept a message that Alice didn't send
+    \item Alice and Bob want Alice to be able to send a message and have Bob receive it in an untampered form.
 \end{itemize}
 
 \sidenote{
@@ -25,10 +27,11 @@ Assume: ({\bf threat model}, what adversary can do and accomplish; always assume
     \begin{itemize}
         \item Confidentiality: trying to keep information secret from someone
         \item Integrity: making sure information hasn't been tampered with
-        \item Availability: making sure system is there and running when needed
+        \item Availability: making sure system is there and running when needed (hardest to achieve!)
     \end{itemize}
 }
-In this problem, the goal is integrity (we can't get the other two)
+
+In this problem, the goal is only integrity. \\
 
 \sidenote{
     {\bf Role of stories in security:}
@@ -36,11 +39,11 @@ In this problem, the goal is integrity (we can't get the other two)
         \item Pro: easy to follow
         \item Cons:
         \begin{itemize}
-            \item forget ``Alice'' is a computer (no common sense)
-            \item forget ``Alice'' is a person + computer (one may have some
+            \item In reality,``Alice/Bob'' is a computer; for example, a server with no common sense
+            \item In reality, ``Alice/Bob'' is a person + computer (one may have some
                     knowledge that other doesn't, e.g. knowledge divergence in
-                    phishing attack
-            \item might root for one side or the other and lose impartiality
+                    phishing attack)
+            \item We might be biased into rooting for one side or the other and lose impartiality
         \end{itemize}
     \end{itemize}
 }
@@ -51,21 +54,21 @@ What to send:\\
     \ovalbox{Mallory} $\xrightarrow{(a,b)}$
     \ovalbox{Bob} : accept $a$ iff $f(a) = b$
 
-$f$ is a {\bf Message Authentication Code (MAC)}\\
+where $f$ is a {\bf Message Authentication Code (MAC)}\\
 
 Properties $f$ needs to be a secure MAC:
 \begin{enumerate}
-    \item deterministic (Bob needs to get the same answer that Alice got)
+    \item deterministic (Bob needs to get the same answer that Alice got every time)
     \item easily computable by Alice and Bob
     \item not computable by Mallory (else Mallory can send $(x, f(x))$ for any
-        $x$ he wants)
+        $x$ s/he wants)
 \end{enumerate}
 
 Choosing $f$:
 \begin{itemize}
-    \item picking something that you think Mallory won't guess is risky since
-        you can't draw any confident conclusions
-    \item use a random function:
+    \item Picking a secret function is risky because it is difficult 
+    	to quantify how likely Mallory will be able to guess the function.
+    \item Use a random function...
         \begin{table}[!h]\centering\begin{tabular}{r|ll}
             input & output &\\
             \cline{1-2}
@@ -75,7 +78,7 @@ Choosing $f$:
         \end{tabular}\end{table}
 
 \sidenote{
-    {\bf ``secure MAC game'': us vs. Mallory}
+    {\bf ``secure MAC game'': Us vs. Mallory}
 
     \hspace*{0.5 cm} repeat until Mallory says ``stop'': \{\\
         \hspace*{1 cm} Mallory chooses $x_i$\\
@@ -83,14 +86,19 @@ Choosing $f$:
     \hspace*{0.5 cm} \}\\
     \hspace*{0.5 cm} Mallory chooses $y \not\in \{x_i\}$\\
     \hspace*{0.5 cm} Mallory guesses $f(y)$: wins if right
+    \\
 
-    Say $f$ is a secure MAC if Mallory can't do better than random guessing
+    $f$ is a secure MAC if and only if every efficient (polytime) strategy for Mallory 
+    wins with negligible (probability that goes to 0) probability. In other words, 
+    $f$ is a secure MAC if Mallory can't do better than random guessing.
+    
     \bigskip
+    
     \begin{theorem*}{A random function is a secure MAC.}\end{theorem*}
     \emph{Intuition:} Mallory asks to reveal certain entries, but for $y$
         Mallory is trying to guess the result of the coin flips
 }
-    \item use a pseudorandom function:
+    \item ...Or more practically, a pseudorandom function:
 
         {\bf pseudorandom function (PRF)}: ``looks random'', ``as good as
             random'', practical to implement
@@ -98,10 +106,10 @@ Choosing $f$:
         typical approach:
         \begin{itemize}
             \item \underline{public} family of function $f_0, f_1, f_2, \dots$
-            \item \underline{secret} key $k$
-            \item \underline{use} $f_k$
+            \item \underline{secret} key $k$ which is, for example, a 256 bit random value
+            \item \underline{use} $f(k, x)$
         \end{itemize}
-
+        
 \sidenote{
     {\bf Kerckhoffs's principle:}
 
@@ -111,49 +119,54 @@ Choosing $f$:
     \begin{enumerate}
         \item can quantify probability that key will be guessed
         \item different people can use the same functions with different keys
-        \item can change key if needed (something goes wrong)
+        \item can change key if needed (if it's given out or lost)
     \end{enumerate}
 }
+\\
 \sidenote{
     {\bf ``PRF game'' against Mallory}:
 
     \hspace*{0.5 cm} we flip a coin secretly to get $b \in \{0,1\}$\\
     \hspace*{0.5 cm} if $b = 0$, let $g = $ random function\\
-    \hspace*{0.5 cm} else, $g=f_k$ for random $k$\\
+    \hspace*{0.5 cm} else, $g=f(k, x)$ for random $k$\\
     \hspace*{0.5 cm} repeat until Mallory says ``stop'': \{\\
         \hspace*{1 cm} Mallory chooses $x_i$\\
         \hspace*{1 cm} we announce $g(x_i)$\\
     \hspace*{0.5 cm} \}\\
-    \hspace*{0.5 cm} Mallory guesses $b$: wins if right
+    \hspace*{0.5 cm} Mallory guesses latest $b$: wins if right\\
+    
+    
+    $f$ is a PRF if and only if every efficient strategy for Mallory wins with probability less than
+    $0.5 + \epsilon$ where $\epsilon$ is negligible. \\
 
-    $f$ is a PRF if Mallory can't do better than 50/50 (actually, allow a tiny
-            advantage)\\
-
-    Note: Mallory can always win by exhaustive search of the $f_k$'s, so need to
+    Note: Mallory can always win by exhaustive search of the range of $k$ in $f(k, x)$, so need to
     limit Mallory to ``practical''\\
 
     \begin{theorem*}{If $f$ is a PRF, then $f$ is a secure MAC}\end{theorem*}
-    \begin{proof} By contradiction. \end{proof}
+    \begin{proof} By contradiction. There's a reduction going on; we wanted
+    to find a secure MAC, which led us to wanting to find a secure PRF
+    \end{proof}
 }
 \end{itemize}
 
 What to send (new):\\
 
-\ovalbox{Alice} $\xrightarrow{(m, f_k(m)}$
+\ovalbox{Alice} $\xrightarrow{(m, f(k, m)}$
     \ovalbox{Mallory} $\xrightarrow{(a,b)}$
-    \ovalbox{Bob} : accept $a$ iff $f_k(a) = b$
+    \ovalbox{Bob} : accept $a$ iff $f(k, a) = b$
 
 Assumptions:
 \begin{enumerate}
     \item $k$ is kept secret from Mallory
-    \item Alice and Bob both know $k$
+    \item Alice and Bob have established $k$ in advance
+    \item Mallory doesn't tamper with the code that computes the function $f(k, a)$
 \end{enumerate}
 
 \subsektion{Do PRF's exist?}
 Answer: maybe/ we hope so (some functions haven't lost yet)\\
 
 Here's one: HMAC-SHA256
-$$f_k(x) = S((k \xor z_1) || S((k \xor z_2) || x))$$
+$$f(k, x) = S((k \xor z_1) || S((k \xor z_2) || x))$$
 where $z_1 = 0x3636\dots$, $z_2 = 0x5c5c\dots$ (note that $||$ is concatenation)
 and $S$ is ``SHA-256'': start with ``compression function'' $C$, taking 256 and
 512 bits in, outputting 256 bits
@@ -168,10 +181,38 @@ and $S$ is ``SHA-256'': start with ``compression function'' $C$, taking 256 and
 
 Note: This is subject to length extension attacks\\
 
-``cryptographic hash'' (MD5, SHA-1, SHA-?) are dangerous to use directly because
+\subsektion{Cryptographic Hash Functions}
+They include MD5, SHA-1, SHA-?, etc: functions that take arbitrary size inputs and return
+fixed size outputs that are ``hard to reverse." They are dangerous to use directly because
 they don't have the properties you think/want then to have.\\
 
+Properties of a cryptographic hash function
+\begin{enumerate}
+	\item Collision resistance:\\
+		Can't find $x \neq y$ such that $H(x) = (y)$
+	\item Second preimage resistance:\\
+		Given $x$, can't find $y$ such that $H(x) = H(y)$
+	\item If $x$ is chosen randomly from a distribution \textit{with high entropy},
+	then given $H(x)$, you can't find $x$
+\end{enumerate}
+
 Better: use a PRF even if $k$ is non-secret
+
+\subsektion{Timing Attacks}
+Suppose Alice and Bob implement MAC-based integrity with the following code
+
+\begin{verbatim}
+def macCheck(a, b, key) {
+    correctMac = Mac(key, a);
+    for (i = 0; i < length; ++i) {
+        if (correctMac[i] != b[i]) return false
+        }
+    return true
+}
+\end{verbatim}
+
+The problem? The execution time depends on the first $n$ correct characters. Mallory may observe the runtime to
+gain insight on cracking the code.
 
 \subsektion{Multiple Alice - Bob messages}
 How to deal with Mallory sending messages out of order or resending old messages

@@ -1,0 +1,203 @@
+%!TEX root = InfoSec.tex
+% Lecture 10: 17 October 2012
+\sektion{10}{Memory safety}
+Core problem: how to \underline{isolate} programs running on the same machine.
+
+\makebox[9cm]{\framebox[2.5cm]{component}\makebox[1cm]{$\leftrightarrow$}\parbox[c]{2cm}{interfaces\\\makebox[.75cm]{}\framebox[.5cm]I}\makebox[1cm]{$\leftrightarrow$}\framebox[2.5cm]{component}}\\
+\makebox[9cm]{\makebox[6.5cm]{}\makebox[2.5cm]{$\updownarrow$}}\\
+\makebox[9cm]{\makebox[6.5cm]{}\makebox[2.5cm]{\framebox[.5cm]{I}}}\\
+\makebox[9cm]{\makebox[6.5cm]{}\makebox[2.5cm]{$\updownarrow$}}\\
+\framebox[9cm]{operating system}
+
+Goals:
+\begin{itemize}
+    \item limit addresses a program can read/write
+    \item prohibit jumps outside prgram's own code (except via interfaces)
+\end{itemize}
+Common themes:
+\begin{itemize}
+    \item enforcement mechanism more powerful than the program
+    \item enforcement mechanism must start first
+\end{itemize}
+Two styles of memory safety enforcement
+\begin{itemize}
+    \item hardware-based (e.g. most OSes)
+    \item software-based (e.g. most browsers)
+\end{itemize}
+\subsektion{Hardware-based memory safety}
+\begin{itemize}
+    \item virtual memory:
+
+\begin{tabular}{rcc}
+address & \framebox[4cm]{virtual page \#} & \framebox[3cm]{offset}\\
+        & $\downarrow$ & \multirow{3}{*}{\begin{sideways}$\xleftarrow{\qquad\qquad\quad}$\end{sideways}}\\
+        & \ovalbox{\parbox[c]{2cm}{\centering translate\\via page\\table}} &\\
+        & $\downarrow$ &\\
+physical address & \framebox[4cm]{physical page \#} & \framebox[3cm]{offset}
+\end{tabular}
+
+            page table, separate for each process
+            \begin{table}[h!]\centering\begin{tabular}{c|c}
+            virtual page \# & physical page \#\\
+            \hline
+            0 & 73\\
+            \hline
+            1 & 0\\
+            \hline
+            $\vdots$ & $\vdots$
+            \end{tabular}\end{table}
+
+            If physical page number isn't in the page table, then that program
+            can't access it.
+    \item page protection bits: for each page, say whether current program
+        \begin{itemize}
+            \item can read
+            \item can write
+            \item can execute (on some machines)
+        \end{itemize}
+\end{itemize}
+%Use same mechanism for controlling disk and network access hardware by mapping
+%to region of virtual addresses?
+
+{\bf OS Kernel}\\
+Special program with superpowers -- can set up page table, protection bits, etc.
+
+Hardware ``priviledged'' bit:
+\begin{itemize}
+    \item in privileged mode, can modify permissions
+    \item on when kernel is running, off when not
+\end{itemize}
+Certain instructions will run only in privileged mode.
+
+System call:
+\begin{itemize}
+    \item special way for ordinary code to call the kernel
+    \item forces call to go through a special interface -- to a
+        \underline{fixed} program address in kernel
+    \item special ``syscall'' (hardware) instruction, simultaneously:
+        \begin{itemize}
+            \item sets privileged bit to true
+            \item sets program counter to a fixed value (forced to go through
+                    entry point where everything will be checked)
+        \end{itemize}
+\end{itemize}
+
+{\bf Hardware-based: pros and cons}
+\begin{description}
+    \item[+] simple mechanisms, can do fast checking
+    \item[--] slow to cross protection boundaries
+    \item[--] narrow interface between components
+    \item[--] hard to layer this on itself (if a program wants to use hardware-
+            based protection for its own internals)
+\end{description}
+\subsektion{Software-based memory safety}
+Big fad back around 1970 then almost died out; came back in late 90's with
+widespread use of the Internet
+
+{\bf Usual model}
+\begin{itemize}
+    \item code producer: writes and delievers code
+    \item code consumer: checks and runs code
+    \item goal: protect consumer from producer
+\end{itemize}
+{\bf Approach 1: interpretation}
+
+\begin{tabular}{ccc}
+CP & & CC\\
+\framebox[3cm]{source code} & $\xrightarrow{\qquad\qquad}$ & \ovalbox{\parbox[c]{3cm}{\centering interpreter\\checks safety\\as it runs}}
+\end{tabular}
+
+Example: JavaScript
+
+Pros: portable, rich interfaces, straightforward to implement
+
+Cons: must use certain programming language. interpretation is often slow
+
+{\bf Approach 2: type-safe language}
+Example: Java in browser
+
+Java type safety - every access to an object
+\begin{itemize}
+    \item goes to an object that this program created, and
+    \item obeys \underline{private}, \underline{protected} keywords
+\end{itemize}
+\begin{theorem*}{\textnormal{(conjecture)}}
+If memory is allocated only within a program's own space, then type safety
+implies memory safety.
+\end{theorem*}
+
+\begin{tabular}{ccc}
+CP & & CC\\
+\framebox[3cm]{source code} & &\\
+$\downarrow$ & &\\
+\ovalbox{compiler} & &\\
+$\downarrow$ & &\\
+\framebox[3cm]{.class files} & $\xrightarrow{\qquad\qquad}$ & \ovalbox{verify}\\
+& & $\downarrow$ if ok\\
+& & \ovalbox{interpret/compile}
+\end{tabular}
+
+Pros and cons:
+\begin{description}
+    \item[+] support rich interfaces
+    \item[+] untrusting components can run together
+    \item[--] some compilation/interpretation at the consumer (slow, complex)
+    \item[--] have to use one language? Java class files very dependent on the
+        Java type system, so compiling other kinds of files into .class hard
+\end{description}
+
+{\bf Approach 3: insert checking code}
+
+\begin{tabular}{ccc}
+CP & & CC\\
+\framebox[3cm]{source code} & &\\
+$\downarrow$ & &\\
+\ovalbox{compiler} & &\\
+$\downarrow$ & &\\
+\framebox[3cm]{machine code} & $\xrightarrow{\qquad\qquad}$ & \ovalbox{transformer}\\
+& & $\downarrow$\\
+& & \framebox[3.5cm]{safe machine code}
+\end{tabular}
+
+Transformer inserts checking code before every read, write, or jump instruction.
+
+Complexities:
+\begin{itemize}
+    \item insert code $\rightarrow$ recalculate offsets in the code
+    \item can't let the code jump past the inserted checks
+\end{itemize}
+
+{\bf Approach 4: proof-carrying code}
+
+\begin{tabular}{ccc}
+CP & & CC\\
+\framebox[3cm]{source code} & &\\
+$\downarrow$ & &\\
+\ovalbox{compiler} & &\\
+$\downarrow$ & &\\
+\framebox[3cm]{machine code} & $\xrightarrow{\qquad\qquad}$ & \multirow{2}{*}{\ovalbox{\parbox[c]{1.25cm}{verify\\proof}}}\\
+\framebox[3cm]{proof} & $\xrightarrow{\qquad\qquad}$ &\\
+& & $\downarrow$ if ok\\
+& & \framebox[3cm]{machine code}
+\end{tabular}
+
+Where does the proof come from? Use a certifying compiler: starting with a
+typesafe program, as the compiler goes through transformations to lower-level
+representions of the program it also transforms the proof of why safe to that
+level. Note that the compiler can always add additional checking code in order
+to make the proof simpler.
+
+What a safety proof looks like: (in assembly code)
+\begin{itemize}
+    \item annotate each instruction iwth a precondition and a postcondition
+    \item to prove safety, prove:
+        \begin{itemize}
+            \item when program starts, precondition of first instruction is true
+            \item for every instruction, if precondition and execute
+                instruction, then afterward postcondition will be true
+            \item for every instruction, precondition implies (read/write/jump)
+                instruction is safe to execute
+            \item postcondition of each instruction implies precondition of
+                every instruction that can come next
+        \end{itemize}
+\end{itemize}

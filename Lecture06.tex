@@ -1,143 +1,208 @@
-% Lecture 6: 03 October 2012
-\sektion{6}{Privacy, Security, and Identity Online}
-Guest lecturer Arvind Narayanan
+%!TEX root = InfoSec.tex
+% Lecture 7: 29 September 2014
+\sektion{6}{Authenticating people}
+\sidenote{
+    {\bf SHA-3}
 
-Security vs Privacy
+NIST: 1997 new standardization effort to pick SHA-3
 
-Do we use encrpytion for security or privacy? Depends
-
-Example: You're sitting in a coffee shop and due to a weakness in the encryption
-a creepy guy two tables away is sniffing the wireless and reading your Gmail. Is
-this a security or privacy breach? Class answer: both
-
-Privacy of email but compromised by security bug in the software
-
-\subsektion{Online tracking}
-``On the Internet, nobody knows you're a dog.'' -- now a complete reversal from
-this situation, and now sites are trying to collect as much information on you
-as possible (ads, personalization, ...)
-
-Behavioral targeting: on the webpages, cookies, javascript, webbugs (1 px gifs)
-tracking you; the third party domain is getting your information.
-
-Refer header: whenever a page embeds another page, the 3rd party page gets an
-extra header (top level url of page you're looking at)
-
-Ad Network as auction between users/publishers and advertisers
+recently keccak picked
 \begin{itemize}
-\item places ads
-\item collecting your data to get what kind of ad is suited to you, not just the
-page you're on
+    \item fast to implement to implement in software, and really fast in
+        hardware
+    \item in practice, probably will be implemented in software, but brute force
+        search to break it will probably be done in hardware -- slight
+        conspiracy theory that NIST picked so as to advantage attackers with
+        larger resources
+\end{itemize}
+}
+Authenticating: Make sure someone is who they claim to be
+
+Three basic approaches, relying on
+\begin{enumerate}
+    \item something you \underline{know} (mother's maiden name)
+    \item something you \underline{have} (prox)
+    \item something you \underline{are} (``biometrics'')
+\end{enumerate}
+\subsektion{Something you know: passwords}
+Password threat model:
+\begin{itemize}
+    \item user picks a password and remembers it
+    \item to log in, user gives name, password
+    \item adversary wants to log in as user
+    \item adversary \underline{might} be able to compromise server
+\end{itemize}
+First approach:
+\begin{itemize}
+    \item server has ``password database" of (name, password) pairs
+    \item system verifies match
+    \item Drawback: if adversary sees database, he/she can impersonate any user
+\end{itemize}
+Attacks (to get a user's password):
+\begin{itemize}
+    \item guessing attack\\
+        online: try to log in as user\\
+        offline: get password DB, computational search over passwords
+    \item trick the user, or someone else who knows the password, into telling you -- surprisingly effective (``social
+            engineering'')
+    \item impersonate server, get user to ``log in'' to you (``spoofing'',
+            ``phishing'')
+    \item online guessing: try to log in with guessed name and password
+    \item offline guessing: get password DB, computational search over passwords
+    \item if user wrote down password, read it
+    \item change the password database (somehow)
+    \item watch the user log in, see what user types (``shoulder surfing'')
+    \item compromise the user's device (somehow) and record actions (e.g. ``key logging")
+    \item get user's password from one site, and try it on another
+    	\begin{itemize}
+		\item most users have between 3-5 passwords they reuse
+	\end{itemize}
+\end{itemize}
+Countermeasures:
+\begin{itemize}
+    \item teach users not to divulge passwords (such as having a box saying
+            ``AOL will never ask you for your password")
+    \item make guessing harder
+    \begin{itemize}
+    	\item implement a time delay after password failure (e.g. 2 seconds); this will slow down guessing attacks
+        \item limit number of failed attempts (``velocity control''), only for
+                online guessing
+        \item avoid informative error message if user fails to log in (so don't
+                say username was right but password wrong)
+        \item vs. offline guessing: slow down the verification code
+        	\begin{itemize}
+		\item compute $Hash^n$(PRF(...)) to verify password
+		\item might slow verification by a factor of 1000
+	\end{itemize}
+            % tricky example: password doesn't match or memory error if does 
+            % character-by-character comparison and put your password right
+            % before unaccessible memory location so it'll memory error if first
+            % character right; can then shift to get next part of prefix
+    \end{itemize}
+    \item server stores hash(password) rather than password, so password
+            database doesn't convey passwords
+    \item often, iterate hash: H(H(H(H(H...(password)...)))); slows brute-force
+            search, but adversary can try ``dictionary attack'' -- hash many
+            common passwords and build a handy retrieval data structure
+    \item to frustrate dictionary attacks, use a ``salt'': for each user,
+            generate a random value $S_u$, then store in password database
+            (name, $S_u$, Hash(password, $S_u$ || password))
+
+            Then an attacker would need to build a dictionary for each user
+
+            Note that salt is in password database and it is convenient to keep
+            secret, but hopefully password is strong enough for this to be okay
+            even if the salt is leaked
+            
+            Note: in this model, the server doesn't store password
+\end{itemize}
+Guessing is a serious problem in practice: people pick lousy passwords, and
+attackers get more powerful all the time by Moore's law
+% Prof Felten's story
+% coffee and begging day's password for a week if sysadmin guessed your password
+
+% Some study on univeristy passwords gave for one univeristy beer, love, hockey,
+% jesus top passwords
+
+Reducing guessability:
+\begin{itemize}
+	\item hard to quantify guessability
+	\item only sure way: make password random, chosen from a large space (these are usually hard to remember)
+	\item format rules (e.g. special character and at least one uppercase character)
+	\item require password to be longer (probably better than format rules)
 \end{itemize}
 
-Third Party Tracking
-
-All the information is going into a database: NOT aggregate
-
-Who has access? Tons of companies
-
-64 indepdendent tracking mechanisms on average on top 50 sites.
-
-Aliasing: visit hi5.com with subdomain ad.hi5.com but DNS redirects to
-ad.yieldmanager.com. Browser tricked since this works even if you block 3rd
-party cookies.
-
-Also flash cookies and browser fingerprinting.
-
-Fingerprinting since our browsers are unique enough: user agent string, plugins
-
-See \href{https://panopticlick.eff.org/}{panopticlick}.
-
-User-agent string along: 10 bits of entropy, 84\% of fingerprints unique, with
-Flash or Java, 94\% unique.
-\subsektion{Anonymity vs pseudonymity vs identity}
-``Don't worry, it's all anonymous''
-
-Truly anonymous shouldn't be able to track you under a pseudonym in a different
-session. (How the Internet started)
-
-Pseudononymous can tell when same person comes back but don't know real-life
-identiy. (Internet post-cookies)
-
-Identity can get back to real-life identity.
-
-Ways for websites to get your identity:
-\begin{enumerate}
-    \item Third party is sometimes a first party: have first party relationship
-        with social networking sites but they're also as widgets on other pages
-
-        Example: Facebook's Like button -- even if you don't click it, Facebook
-        knows you were on that page
-    \item Leakage of identifiers:
-
-        \begin{tt}
-        GET http://ad.doubleclick.net/adj/...\\
-        Referer: http://submit.SPORTS.com/...?email=\color{red}{jdoe@email.com}\\
-        Cookie: id=\color{red}{35c192bcfe0000b1...}\\
-        \end{tt}
-
-        Identity has been compromised now and in the future
-    \item Third party buys your identity: free iPod scam passing your email to
-        first party site
-    \item Security bugs:
-        \begin{itemize}
-        \item http://google.com/profiles/me redirects to
-            http://google.com/profiles/randomwalker
-
-            In firefox, can put the url in a script tag, JavaScript throws error
-            which includes the url, giving randomwalker or other identity just
-            from visiting this random page
-
-            Mozilla's solution: only tell original, not redirected URL
-        \item Google spreadsheets: people don't necessarily understand can be
-            public
-
-            Can specify all in URL in search to get public spreadsheets
-
-            Can embed invisible Google spreadsheet and look at ``Viewing now''
-            on another machine-- how to tell which of these users to serve what
-            to? Use lots of different spreadsheets. Assign users to a subset of
-            10 spreadsheets, and then chance of overlap pretty low.
-
-            Google fixed by showing user as Anonymous when on a public
-            spreadsheet even when logged in, revealing identity only if
-            explicitly shared with that user (and the user accepted).
-        \end{itemize}
-\end{enumerate}
-\subsektion{How security bugs contribute to online tracking}
+Password hygiene
 \begin{itemize}
-    \item History sniffing and privacy:
+    \item like key hygiene
+    \item change periodically and avoid patterns (``password1'', ``password2'', ...)
+    \item expire idle sessions (walk-away problem)
+    \item require old password to change password
+\end{itemize}
 
-        CSS :visited property; how can the web page figure out the color? Check
-        in JavaScript
+What if user forgets password?
+\begin{itemize}
+    \item if hashed password is stored, can only set a new one
+    \item else, can tell them password, BUT how do you know it's not an
+            impostor?
+    \item clever solution by Gmail: if all else fails, we'll give you a new
+            password, but you'll need to wait before trying to log in again.
+            Then legitimate user may log in and see a warning during that time
+\end{itemize}
+
+Preventing spoofing:
+\begin{itemize}
+     \item multi-factor authentication: password + something else (e.g. token, app) 
+     \item Evidence-based (Bayesian) authentication: treat password entry as evidence, but not 100\% certainty
+     	\begin{itemize}
+	\item then use as much other evidence as possible (e.g. geolocation)
+	\item other examples: device identity, software version, behavior patterns (especially atypical behavior)
+	\item if confidence is too low, get more evidence
+	\end{itemize}
+    \item distinctive per-user display
+    \item distinctive unspoofable action before login
+
+        Windows CTRL-ALT-DEL before every time you enter password, always taking
+        you to legitimate login screen
+    \item challenge-response protocol: (sign a challenge value)
+    	\begin{itemize}
+	\item advantage: eavesdropper can't replay a log-in session
+	\item spoofer can't impersonate the user later
+	\end{itemize}
+    \item use one-time-passwords
+
+        security advantage, but logistical disadvantages: server has to serve
+        more stuff, might run out at an inconvenient time
+    \item hash-chain: user generates random value $x_0$ then chain with
+        $x_{i+1} = H(x_i)$. The one-time passwords are
+        $x_{n-1}, x_{n-2}, \dots, x_0$ in this order, and the server checks that
+        each password is the hash of the next password. User remembers $x_0$
+        and where in chain they are.
+        \begin{table}\centering\begin{tabular}{ccc}
+            user & & system\\
+            \hline
+            password (p) & & random challenge (r) \\
+            & $\xrightarrow{\text{name}}$ & \\
+            & $\xleftarrow{r \text{ (random)}}$ & \\
+            & $\xrightarrow{\text{PRF} (p,r)}$ &
+        \end{tabular}\end{table}
+    \item password + Diffie-Hellman: SPEKE (Simple Password Exponential Key
+            Exchange)
+
+        Use D-H with public prime $p$, server stores
+        $g = (\text{Hash(password)})^2 \mod p$
+
+        Results:
         \begin{itemize}
-            \item getComputedStyle()
-            \item cache timing: on page, try to download something as embedded;
-                if visited before, faster due to caching
-            \item server hit: based on if browser downloads image or not
+            \item user, server get shared secret from D-H
+            \item MITH attack doesn't work
+            \item user only has to remember a password, not a key
         \end{itemize}
-    \item Identity sniffing:
-        \begin{itemize}
-            \item All social networking sites have groups that users can join
-            \item Users typically join multiple groups, some of which are public
-            \item Group affiliations act as fingerprint
-            \item Predictable group-specific URLs exist
-        \end{itemize}
-        Look through memebers of groups and see who matches in all the groups
-        the user has joined
+\end{itemize}
+\subsektion{Something you have}
+Typically, tamper-resistant device stores a key or some cryptographic secret.
 
-        Fix as browser: ensure that a site can't see what color a link is by
-        keeping track of who (browser's rendering component vs programmatic
-        component) is making the query
+It does crypto to prove the user has it.
+\subsektion{Something you are}
+\begin{definition}{biometric}
 
-        Fix as social network: make the URLs not predictable
-    \item One-click fraud: Display IP address and approximate location, so user
-        assumes the site knows who you are
-
-        What if the website actually has your identity and makes a credible
-        threat?
-    \item Not a bug:
-
-        Facebook's instant personalization: Facebook tells partner sites who you
-        are
+Measuring aspect of user's body: fingerprint, iris scan, retina scan, finger
+length, voice properties, facial features, hand geometry, typing patterns, gait
+\end{definition}
+Basic scheme:
+\begin{itemize}
+    \item enroll user: take a few measurements, compute ``exemplar''
+    \item later, when user presents self, measure, compare to exemplar; compute
+            ``distance'' to exemplar
+    \item if ``close enough'', accept as valid user, else reject: tradeoff in
+    threshold between false accepts and false rejects
+\end{itemize}
+Drawbacks:
+\begin{itemize}
+    \item hard/impossible to follow good key hygiene (can't change aspects of user's body)
+    \item often requires physical presence
+    \item spoofing attacks; make image of body part, faking tempertature,
+            inductance, etc. (melted gummy bears moulded into finger-shape...)
+    \item measurement is only approximate (need to control false positives and false negatives)
+    \item publicly obversable (eg. DNA, fingerprints)
 \end{itemize}

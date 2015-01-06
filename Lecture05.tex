@@ -1,4 +1,5 @@
-% Lecture 5: 01 October 2012
+%!TEX root = InfoSec.tex
+% Lecture 5: 24 September 2014
 \sektion{5}{Key Management}
 \sidenote{
     US for a long time put restrictions on export of cryptographic software, the
@@ -16,8 +17,8 @@
 \subsektion{How big should keys be?}
 A key should be so big an adversary has negligible chance of guessing it.
 \begin{itemize}
-    \item Watch out for Moore's law (adversary's capabilities increase by one
-        bit every 18 months)
+    \item Watch out for Moore's law: Computers double in speed every 18 months.
+        So, you need to add one more bit every 18 months.
     \item For symmetric ciphers, 128 bits is plenty: $2^{128} \approx 10^{39}$,
         so at 1 trillion guesses per second, takes 10 quadrillion times the
         lifetime of the universe.
@@ -48,7 +49,7 @@ A key should be so big an adversary has negligible chance of guessing it.
     \item Key management is the hard part
     \item Keys must be strongly (pseudo)random
     \item Different keys for different purposes (signing/encrypting, encrypting
-        vs MACing, Alice - Bob vs Bob - Alice, different protocols)
+        vs MACing, Alice to Bob vs Bob to Alice, different protocols)
     \item Vulnerability of a key increases
     \begin{itemize}
         \item the more you use it
@@ -59,10 +60,12 @@ A key should be so big an adversary has negligible chance of guessing it.
     Bob share a long-term key, generate a fresh key just for now and use the
     long-term key to ``handshake'' and agree on which fresh key to use.
     \item The hardest key to compromise is one that's not in accessible storage
-        (e.g. a key that's in a drive locked in a safe)
+        (e.g. a key that's in a drive locked in a safe or stored offline).
     \item Protect yourself against compromise of old keys (forward secrecy);
         destroy keys when you're done with them (and keep track of where the
         keys are)
+
+        For example, it's bad if Alice tells Bob, "Here's our new key, encrypted under the old key." If Mallory records this message and later breaks the old key, she now can also get the new key.
 \end{enumerate}
 
 {\bf Diffie-Hellman key exchange (D-H):} 1976\\
@@ -91,7 +94,7 @@ and Bob know something that nobody else knows.
 In practice, use $H(g^{ab} \mod p)$ as a shared secret.
 
 BUT: works against an evesdropper (``passive adversary'', ``Eve'') but insecure
-if adversary can modify messages (``man in the middle'', ''MITM'' attack)
+if adversary can modify messages (``man in the middle'', ''MITM'' attack). 
 
 \begin{table}[h!]
 \centering
@@ -133,7 +136,7 @@ key.
 
 If an adversary doesn't know the old key, can't tamper with the D-H messages.
 Even if the adversary gets an old key, not knowing the old key \emph{in real
-time} means Mallory can't attack the D-H exchange. So Alice and Bob get forward
+time} means Mallory can't attack the D-H exchange, and can only be a passive adversary. So Alice and Bob get forward
 secrecy with relatively low cost.
 
 Another problem, similar to MITM:
@@ -164,4 +167,10 @@ So also abort if receive $p-1$.
 
 If you chose a safe prime, $1$ and $p-1$ are the only bad values, and there's a
 very small chance that one of these would be sent legitimately (plus Alice and
-Bob may be checking to make sure they don't send them anyway).
+Bob may be checking to make sure they don't send them anyway).\\
+
+
+\begin{theorem}
+If $\frac{p-1}{2}$ is prime, then 1 and $p-1$ are the only bad cases in DH.
+So, $p$ is a safe prime if $\frac{p-1}{2}$ is also a prime.
+\end{theorem}

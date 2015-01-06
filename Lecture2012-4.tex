@@ -1,0 +1,123 @@
+%!TEX root = InfoSec.tex
+% Lecture 14: 07 November 2012
+\sektion{14}{Trusted Computing: Platform support for security}
+Addresses ``attack from below''
+
+Tamper-resistant devices (not ``\underline{tamper-proof}'', since that doesn't
+        exist)
+
+Examples:
+\begin{itemize}
+    \item smart card
+        \begin{itemize}
+            \item costs \$1
+            \item 10K-100'sK RAM
+            \item 8- or 16- bit CPU
+            \item destructive attack to get crypto keys by sanding layers off to
+                    reconstruct 3D model of circuitry
+        \end{itemize}
+    \item TR (tamper resistant) ``brick'' device
+        \begin{itemize}
+            \item internal power
+            \item active defense against physical attack (cutting, poking,
+                    probing, \dots)
+            \item costs \$x00
+            \item like an 8-yr old PC capability-wise
+        \end{itemize}
+\end{itemize}
+
+Attacks:
+\begin{itemize}
+    \item MITM between TR device and user - need to access TR device with some
+            other device which adversary can fake
+    \item Hardware hacking attacks
+        \begin{itemize}
+            \item generate glitches by putting in strange environments
+            \item device misbehaves
+            \item hope misbehavior is useful
+        \end{itemize}
+    \item Kocher's timing attacker (1995)
+        \begin{itemize}
+            \item can extract RSA, DH keys from almost any sealed device
+            \item basic idea: encryption time depends on key
+        \end{itemize}
+    \item Fault Analysis (1997 Boneh, DeMillo, Lipton)
+        \begin{itemize}
+            \item induce error in crypto operation
+            \item ennorneous output leaks information about key
+        \end{itemize}
+    \item Differential Power Analysis
+        \begin{itemize}
+            \item idea: record power usage \underline{over time} in fine-grained
+                    way
+            \item very effective: identify path through code, easy to read out
+                    variables
+            \item devices without own power supply are particularly vulnerable
+        \end{itemize}
+\end{itemize}
+
+\begin{subsektion}{Kocher's timing attacker (details)}
+RSA is based on
+\begin{verbatim}
+Integer exp(Integer x, Integer d) {
+    s = x
+    r = 1
+    for (k = 0; k < nbits; ++k) {
+        b = d & (1 << k)
+        if (b)      r *= s      <--- depends on bit value
+        s = s*s
+    }
+    return r
+}
+\end{verbatim}
+so play game to read off bits of \texttt{d}:\\
+        guess, then if correct there will be a correlation to running time,
+        otherwise will be wrong so still know bit (time depends on number of 1's
+        in the key)
+
+Can also use power consumption instead of running time for iteration of the loop
+\end{subsektion}
+\begin{subsektion}{Fault Analysis (details)}
+To cause error, operate device outside spec
+\begin{itemize}
+    \item hot/cold
+    \item overclock
+    \item ``bad'' power supply
+    \item hit with rubber mallet
+\end{itemize}
+Model:
+\begin{itemize}
+    \item attacker causes a single variable to change
+    \item don't know which variable, when it changes, how it changes
+\end{itemize}
+Can attack RSA:
+
+\sidenote{
+{\bf RSA in practice}
+
+Use Chinese Remainder Theorem for optimization: use the identity
+    $$x^d \mod pq = a(x^d \mod p) + b(x^d \mod q)$$
+    where $a \mod p = 1$, $a \mod q = 0$ and $b \mod p = 0$, $b \mod q = 1$
+}
+\begin{itemize}
+    \item assume arbitrary error in computing $x^d \mod p$, getting
+            $x^d \mod p + \Delta$, so result of full encrpytion is
+            $$x^d \mod pq + a\Delta$$
+    \item subtract off correct result to get $a\Delta$ (lots of ways to get
+            correct result, since that's what happens when you don't mess with
+            the device)
+    \item now compute $\text{GCD}(a\Delta, pq)$. Note that $a$ is a multiple of
+            $q$, so:
+            \begin{align*}
+            \text{GCD}(a\Delta, pq)&=\text{GCD}(q\alpha\Delta, pq)\\
+              &=q\cdot\text{GCD}(\alpha\Delta,p)\\
+              &=q\cdot1 = q
+            \end{align*}
+\end{itemize}
+\end{subsektion}
+\begin{subsektion}{Tamper-resistant software}
+\begin{itemize}
+    \item obfuscate to adversary
+    \item difficult to do - lots more options for what to do than with hardware
+\end{itemize}
+\end{subsektion}
