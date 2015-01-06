@@ -1,3 +1,117 @@
 %!TEX root = InfoSec.tex
 % Lecture 15: 5 November 2014
 \sektion{15}{Backdoors in crypto standards}
+\textit{Note: see piazza for lecture slides}
+
+\sidenote{
+	USA used navajo as a code during WWII
+	\begin{itemize}
+		\item couldn't get an accurate phonetic rendering of the code
+		\item provided authentication because people can't replicate the tonal language easily\\
+	\end{itemize}
+}
+
+\textbf{Obvious weaknesses vs. back doors}\\
+OBVIOUS WEAKNESS
+\begin{itemize}
+	\item everyone knows it and can see it
+	\item eg. reducing the key size to make brute force attacks easier\\
+\end{itemize}
+
+BACK DOOR
+\begin{itemize}
+	\item presence is not obvious
+	\item keyed backdoors vs. unkeyed backdoors
+
+	KEYED BACKDOORS: need a secret master key to access back door
+
+	UNKEYED BACKDOORS: not obvious, but just hoping that someone doesn't notice; like a hidden door in real like
+\end{itemize}
+
+\subsektion{Data Encryption Standard (DES)}
+(1) introducing a stronger encryption standard would make US communications more secure
+(2) but would also allow enemies to find/use this stronger encryption
+
+\textbf{Three organizations working on DES}
+IBM, NIST, NSA
+DES is a Fiestel-like procedure
+\begin{itemize}
+	\item had S-boxes with constants (discovered differential crytpanalysis, S-boxes are resistant, but didn't want people to know about differential cryptanalysis)
+	\item key length = 56 (NSA wanted to use 48, IBM wanted to use 64, they compromised at 56)
+	\item a number of iterations
+\end{itemize}
+People were concerned about a builtin backdoor. In reality, NSA tried to weaken the algorithm (smaller key size) but installed no backdoor.
+
+\subsektion{DUAL-EC}
+\begin{definition}
+	Relies on elliptic curves (EC)\\
+	Points are solutions to equations of the form 
+	$$y^2 \mod p = (x^3 + ax + b) \mod p$$
+	You ``add" two EC points to get another EC point. Multiplying point by an int is the same as adding it to itself repeatedly.
+\end{definition}
+
+\textbf{How it works}
+\begin{itemize}
+	\item Pick random, non-secret EC points P, Q
+	\item start with secret integer $s_0$
+	\item to update and generate new output
+
+		\hspace*{1cm} $s_i = x(s_{i-1} P)$ \hspace{1cm} where x(.) extracts x coord 
+
+		\hspace*{1cm} output $T(x(s_i Q))$ \hspace{1cm} where T(.) truncates, discarding 16 high order bits
+\end{itemize}
+
+\textbf{Problem 1}\\
+Adversary can create keyed backdoor if they can choose P and Q (see slides)\\
+So then naturally the NSA chose P and Q.
+
+\sidenote {
+	\textbf{How to generate P and Q?}
+	\begin{itemize}
+		\item choose random seed
+		\item use a one-way algorithm
+		\item get P and Q
+	\end{itemize}
+
+	But what if adversary chooses the seed?\\
+	\hspace*{1cm} It should be okay as long as one-way algorithm is good, and the adversary can't understand the relationship between P and Q
+}
+
+
+\textbf{Problem 2}
+Output bits are easily distinguished from random.
+NSA argued against fixing this (a vulnerability)
+
+(It's overwhelmingly likely that NSA created a keyed backdoor into this standard by choosing P and Q)
+
+\textbf{What happened}
+SSL/TLS are exploitable in practice.
+NIST's errors? Not insisting on fixing vulnerabilities, resulting in a loss of trust in NIST.
+
+The end-user was more vulnerable to NSA due to keyed backdoor and more vulnerable to others due to the bias (unkeyed backdoor)\\
+\textit{Net effect:} semi-keyed backdoor
+
+\subsektion{Digital Signature standard (DSS)}
+There are a lot of known insecure curves, and some curves that are probably secure, but no one can prove it. Let's also say that some adversary can break a fraction $f$ of the believed-good curves.\\
+
+How do we choose a curve when the standard writer might be an adversary?
+\begin{itemize}
+	\item standard writer chooses a curve (never secure)
+	\item choose randomly (secure with Pr = $1-f$)
+	\item one-way algorithm with adversary choice; Pr = $(1-f)^k$
+\end{itemize}
+
+\subsektion{Backdoor-proof standardization}
+\begin{itemize}
+	\item Transparency
+
+		discussions on the record, rationale for decisions published
+	\item Discretion is a problem! It gives adversary latitude.
+
+		eg. choice of technical approach, choice of mathematical structure, choice of constants
+	\item Use competitions, because negotiations in a standards committee is risky.
+
+		participants submit completely proposals. One is chosen by a group and the chosen proposal is adopted as-is or with absolutely clear improvements (this is how AES was gotten)
+\end{itemize}
+
+\textit{Shared trust standards benefit everyone :)}
