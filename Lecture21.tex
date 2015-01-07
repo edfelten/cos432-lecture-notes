@@ -1,3 +1,82 @@
 %!TEX root = InfoSec.tex
 % Lecture 21: 1 December 2014
 \sektion{21}{Economics of security}
+
+\textbf{Does the market produce optimal security?}\\
+\textbf{What is optimal?}
+
+\begin{enumerate}
+	\item Definition 1: Strong Pareto efficiency
+
+	\begin{itemize}
+		\item Condition A is strong Pareto superior to condition B if everyone likes A better than B
+		\item Condition is strong Pareto efficient if no strong Pareto superior alternative is available
+		\item Criticisms: requires that everyone agrees that condition A is better
+	\end{itemize}
+	
+	\item Kaldor-Hicks efficiency
+
+	\begin{itemize}
+		\item Less stringent than Pareto efficiency (which requires that no one is worse off)
+		\item  Condition A is KH superior to condition B if there exists zero-sum payments P among people such that A + payments is strong Pareto superior to B
+	(payments need not happen, theoretical construct)
+		\item For example, if the beneficiaries of pollution could theoretically pay the victims enough that neither party is worse off, that's KH efficient
+		\item Criticisms: payments are theoretical. So taking \$1 from every poor person and giving \$1.02 each to Bill Gates is KH efficient
+	\end{itemize}
+\end{enumerate}
+
+\textbf{A world with perfect information and perfect bargaining} would be SP efficient and KH efficient. 
+
+\begin{proof}
+\textbf{SP efficiency:} By contradiction: \\
+	Suppose outcome is not SP efficient. Then an alternative exists that is SP superior to outcome. Then bargaining would lead to that alternative.
+
+\textbf{KH efficiency:} also by contradiction:
+	Suppose outcome is not KH efficient. Then there is an alternative A, payments P that A + P is SP superior to outcome. Therefore, outcome is not KH-efficient.
+\end{proof}
+
+So, there must be some market failure happening because the world is certainly not SP efficient (and thus certainly not KH efficient).
+
+\subsektion{Market Failure 1}
+\textit{Negative extenalities} (think spam, DDoS). The user will invest in reducing harm to self, but not in reducing harm to strangers. So here, there is an underinvestment in security because there is an external harm (beyond producer to buyer), and bargaining to fix externalities is not possible in the real world.
+
+\subsektion{Market Failure 2}
+\textit{Asymmetric information:} It's hard for buyers to evaluation the security of products. The producer knows more about the security of the product than the customers do.
+
+Recall the ``lemons market'' from a few lectures ago. If a consumer can't tell high quality goods from low quality goods, the consumer won't pay extra for high quality and the producer then won't invest in quality. 
+
+\textbf{Antidotes} 
+\begin{itemize}
+	\item warranties
+	\item seller reputation
+\end{itemize}
+(as a sidenote, both work poorly for startup companies)
+
+\subsektion{Network effects}
+A product that becomes more valuable as more people use it (think email, phone, search engine) tends to push markets towards monopoly. Standards can lead to positive network effects without monopoly. 
+
+\sidenote{
+	\textbf{Network effect cons}\\
+	It leads to a monoculture which can help the bad guys\\
+
+	\textbf{Network effect pros}
+	\begin{itemize}
+		\item scale efficiencies in terms of security
+		\item internalize some of the benefits
+		\item antidotes to the lemons market problem with be more effective
+	\end{itemize}	
+}
+
+
+\textbf{Race to market}: Network effect markets will often tip toward the early leader. There might be lots of contenders for a market, but really only one winner. So, time to market is critical. 
+
+This leads to companies getting an MVP into the market as soon as possible and without waiting for better security. They can make a small upfront payment now in hopes of a large payoff later. This leads to a ``bolt on security'' kind of approach. 
+
+\textbf{Can this be fixed?}
+\begin{itemize}
+	\item Large customers can protect themselves. There might also be market structures to improve information flow? For example, insurance companies or certification programs.
+	\item Liability rules can changed so that a producer must pay user if their product caused a breach. \textit{Optimal liability rule: cost borne by whoever can best prevent harm}. This approach argues for liability for producers, BUT it's (1) hard to attribute blame, (2) hard to measure harm, and (3) there's a substantial cost to adjudication.
+	\item Public inspections; a large buyer demands ability to publicize their security evaluations of products 
+\end{itemize}
+
+
