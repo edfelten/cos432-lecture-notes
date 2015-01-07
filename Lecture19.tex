@@ -1,3 +1,142 @@
 %!TEX root = InfoSec.tex
 % Lecture 19: 19 November 2014
 \sektion{19}{Bitcoin and cryptocurrencies}
+
+The easy way is to use the banking system.\\
+Alice $\rightarrow$ Bob payment: 3-way protocol with bank
+
+But: what if we want privacy/have no trusted third party?  Decentralized e-cash protocols MIGHT be able to address the need.
+
+\subsektion{Bitcoin in three steps}
+\textbf{Step 1: Goofycoin}\\
+Rules
+\begin{itemize}
+	\item goofy can make a coin (uniqueID, value) signed by $k_{Goofy}$, where $k_{Goofy}$ is the key that Goofy uses to sign the coin
+	\item new coins belong to $k_{Goofy}$
+	\item owner can transfer the coin to another key: PayTo ($k_{Alice}$, Hash(coin)) signed $k_{owner}$
+	
+	This is a valid coin if it has valid signatures that belong to Alice and owner, respectively
+\end{itemize}
+
+For Goofycoins, the \textit{key} is the \textit{identity}. The \textit{name} of the user is the \textit{hash(public key)}; called the ``address'' in bitcoin lingo.
+
+\textbf{Problems:}
+\textit{Biggest problem: }owner can spend a coin with PayTo, and keep it; called "double spending". Also, coins are indivisible; also, Goofy can make infinite money.
+
+\textbf{Step 2: Scrooge coin}
+Like Goofycoin, but scrooge is in charge\\
+Changes:
+\begin{itemize}
+	\item multiple coins input/output from transaction
+	\item Transaction:
+	\begin{itemize}
+		\item input coins [list of coins]
+		\item output coins: list of (value, owner) pairs
+		\item Tx (transaction) consumes input coins, creates output coins
+		\item total value outputs == total value inputs
+		\item Tx must be signed by owners of all inputs
+	\end{itemize}
+	\item Scrooge publishes a log of ALL Tx that happen.
+
+	Solves double spending - first Tx to spend a coin "wins"; subsequent spending is invalid. Tx isn't "real" until it's in the log
+\end{itemize}
+
+\textbf{Pros and cons}\\
+\textit{PRO:} solves double spending and indivisibility problems\\
+\textit{CON:} have to trust Scrooge, and Scrooge has to exist to publish the log
+
+\textbf{Step 3: Bitcoin}
+Like Scroogecoin, but decentralized log protocol (along with other minor differences)
+
+\textit{Peer-to-peer layer in Bitcoin}
+\begin{itemize}
+	\item there exists a virtual broadcast layer to publish info
+	\item info ``floods" on P2P layer
+	\item Log consensus algorithm
+		
+		goal: everyone agrees what's in the log
+	\item millions of participants, anonymous incentive to cheat
+\end{itemize}
+
+	
+\textit{Data structure: "the blockchain"}\\
+The first block is a genesis block -- a sort of null block.
+Inside each block: (1) hash of previous block, (2) nonce, (3)list of Tx. The idea is that you get a chain of blocks, but in real life probably looks like a tree
+
+Okay, well if it's a tree then there's ambiguity about which Tx happened. The basic problem? Users aren't trustworthy. How does bitcoin deal with this? Mining.
+
+\subsektion{Mining}
+\textbf{Proof-of-work}\\
+The rule is that Hash(block) must start with 0000000... ($k$ 0 bits). Otherwise, block is considered not valid. To find a valid block, try nonces at random, test if they work.
+
+This is \textbf{mining}; it's computationally intensive and on average, take $2^k$ tries to find a valid nonce. If you find a valid block, you broadcast on P2P network and now it exists as part of the block structure.
+	
+Why would anyone do this?
+\textbf{Block reward}\\
+Each block can contain a "coinbase" Tx that creates 25 new BTC. The miner gives them to somebody (read: to him/herself). So the incentive to create blocks is high (25 BTC is close to \$8000). 
+
+\textit{1 block found every 10 minutes (on average)}
+
+\textbf{Longest chain rule: }\\
+If the block chain branches, treat the longest chain as the real one.
+
+\textit{Where to mine?}\\
+If you find a block on a subchain that is not accepted as the "real" history of the system, then your 25 BTC is worthless.
+\textit{Incentive argument:} everyone wants to maximize chance that their new block is on the consensus chain, terefore miner will put the block at the end of the longest chain. The result is tha one long chain grows.
+
+In principal the chain can branch, but in practice, due to the incentive argument, it'll probably be one long chain
+
+\textit{*** Problems with incentive argument ***}
+\begin{itemize}
+	\item it doesn't work if one liner controls $>$ 1/2 of mining power
+	\item assumes complete information
+	
+	The assumption that the blocks you know about are truly the blocks that exist. What if there is block withholding?
+	\item circularity
+	
+	why assume everyone else is well-behaved?
+\end{itemize}
+
+\textbf{A few more details about mining}
+\begin{itemize}
+	\item Block difficulty (number of leading 0s it needs) adjusts adaptively
+	
+	target: 1 new block per 10 minutes
+	\item Total mining reward available is about \$500 M/year
+	
+	Current hashes per second computed
+	$2 \cdot 10^{16} \approx 2^{56}$
+	\item Mining pools
+	
+	many miners share rewards and are paid in proportion to their computing effort. also exist protocols to prevent cheating
+\end{itemize}
+
+
+\sidenote {
+	\textbf{The bitcoin economy}\\
+	There is about 13.5 M BTC in circulation. \\
+
+	Total monetary base:\\
+	$13.5 M \cdot \$380 = \$5$ billion in circulation using the exchange rate 1BTC = \$380 (rate as of 11/19 morning)\\
+
+	BTC is functionally more useful than other currencies in certain circumstances, which is what people are paying for!\\
+}
+
+\textbf{Bitcoin exchange}\\
+Like bank for BTC
+\begin{itemize}
+	\item can deposit, withdraw BTC, USD, can make payments on your behalf
+	\item risk! exchange is dishonest
+	\item risk! intrusion during exchange
+
+		BTC is cryptographically verifiable, meaning you can't unwind transactions
+	\item risk! exchange might just go wrong
+
+		half of bitcoin exchanges have failed for some reason or another
+\end{itemize}
+
+
+\textbf{Where to store your coins?}\\
+Really, the question is, where to put your private keys?
+The equivalent of a simple "wallet" is to store keys on your computer. However, the risk in this is that if your key is deleted, your money is deleted. If your key is stolen, your money is stolen.
+

@@ -1,3 +1,94 @@
 %!TEX root = InfoSec.tex
 % Lecture 20: 24 November 2014
 \sektion{20}{Big data and privacy}
+
+When you have a big db with data about people, you want to make valid inferences about the population as a whole, but not valide inferences about individuals.
+
+\textbf{Approaches}
+\begin{itemize}
+	\item release summary stats
+	
+	good privacy if done right because it withholds useful information
+	\item anonymize the data set before release
+	
+	This is much harder to do right than it sounds because of two problems:
+	\begin{itemize}
+		\item quasi-identifiers: unique but "not identifying", e.g. birthday + zip code + searches for their own name
+		\item linkage to outside data, e.g. looking  at netflix data and looking at IMDB data to re-identify people
+	\end{itemize}
+\end{itemize}
+
+In analyzing big data, we want semantic privacy. 
+\begin{definition}
+	Given two databases $D$ and $D'$, where $D'$ is $D$ with your data removed, anything an analyst can learn from $D$, they can also learn from $D'$
+\end{definition}
+
+\begin{theorem}
+	Semantic privacy implies that the result of the analysis does not depend on the contents of the dataset.
+\end{theorem}
+
+\begin{definition}
+	A randomized function Q gives $\epsilon$-differential privacy (E-DP) if for all datasets $D_1, D_2$ that differ in the inclusion/exclusion of one element, and for all sets $S$, the following is true:
+
+	$$\Pr[Q(D_1) \in S] \leq e^\epsilon \cdot \Pr[Q(D_2) \in S]$$
+
+	As $\epsilon$ goes to 0, we get stricter about privacy.
+\end{definition}
+
+\sidenote{
+	Useful fact: Post processing is safe. \\
+
+	If $Q(.)$ is E-DP, then for all functions $g$, $g(Q(.))$ is E-DP.\\
+}
+
+\subsektion{How to achieve E-DP?}
+Ans: Add random noise to ``true answer''
+
+\begin{example}
+Counting queries: \verb|``How many items in the DB have the property _____?''|\\
+
+	\begin{itemize}
+		\item Let C = correct answer
+		\item Generate noise from distribution with probability density function (PDF) $f(x) = \epsilon/2 \cdot e^{-\epsilon|x|}$
+		\item Return C + noise
+	\end{itemize}
+We can prove this approach is E-DP, where $\epsilon$ is a measure of accuracy/privacy. There's a tradeoff (as accuracy increases, privacy decreases).
+\end{example}
+
+To make results ``non weird'' (1) round off numbers to integers, (2) if a result is less than 0, set it to 0, and (3) if a result is greater than a cap $N$, set it to $N$.
+
+\textbf{What about multiple queries and averaging?}
+\begin{theorem}
+If Q is E1-DP, and Q' is E2-DP, then (Q(.), Q'(.)) is (E1 + E2)-DP. (Essentially, you've added how non-private the queries are)
+\end{theorem}
+
+The implications? You can give an analyst an ``$\epsilon$ budget'' and let them decide how to use it.
+
+\textbf{Generalizing beyond counting queries}\\
+If each element of the database can add/subtract at most some number V from the results of the query, then we can generate noise from this distribution:
+	$$f(x) = \epsilon V/2 * e^{-\epsilon V|x|}$$
+and the result will be E-DP.
+
+\subsektion{Problems}
+
+\textbf{Collaborative recommendation systems:}\\
+	\hspace*{1cm} ``People who bought X also bought Y''\\
+	\hspace*{1cm} ``If you like this you'll also like that''
+
+\begin{example}
+Artificial example: But what if there exists a book that only Ed would buy? \\
+	\hspace*{1cm} ``People who bought said book also bought Y''\\
+Now you can easily extract information about what else Ed buys.
+\end{example}
+
+\begin{example}
+Less artificial example: But what if there exists a rare book that you know Ed bought?\\
+	\hspace*{1cm} ``People who bought said book also bought Y''\\
+Collaborative recommendations are still a clue about what Ed bought.
+\end{example}
+
+\subsektion{How to fix}
+\textbf{Look at internals}. Let's say a system computes a covariance matrix (basically a correlation between all pairs of items) to generate these recommendations. The matrix could be computed in a DP fashion, adding noise.
+
+\textbf{Other useful tricks}\\
+Machine learning + DP queries: A machine learning algorithm exchanges a bunch of DP queries and results, and it'll synthesize a new data set.
