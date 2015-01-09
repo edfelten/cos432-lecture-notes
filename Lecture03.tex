@@ -1,4 +1,5 @@
-% Lecture 3: 24 September 2012
+%!TEX root = InfoSec.tex
+% Lecture 3: 17 September 2014
 \sektion{3}{Block ciphers}
 
 \sidenote{
@@ -19,7 +20,7 @@
 }
 
 Last time: Stream ciphers
-    $$E(k,m) = D(k, m) = \text(PRG)(k) \xor m$$
+    $$E(k,m) = D(k, m) = \text{PRG}(k) \xor m$$
 
 Alternative approach: Block ciphers
 
@@ -65,12 +66,11 @@ Minimal properties of a good block cipher:
     \item efficient
     \item highly nonlinear (``confusion property'') - hard for adversary to
         invert
-    \item mix input bits together (``diffusion'') - this is important so that
-        small changes to the input will create complicated changes in the output
+    \item mix input bits together (``diffusion'') - every input bit affects the output
     \item depend on the key
 \end{itemize}
 
-How to get these properties: Feistel network
+How to get these properties: Feistel network, given that $f$ is a PRF
 
 \makebox[6cm]{plaintext}\\
 \framebox[6cm]{\makebox[3cm]{left half}\textbar\makebox[3cm]{right half}}\\
@@ -95,15 +95,14 @@ Often use weaker rounds (which may be faster to compute), but more of them.
 
 \begin{example}{DES (Data Encryption Standard)}
     \begin{itemize}
-        \item block size 64 bits
+        \item block size = 64 bits
         \item 56-bit key
         \item Feistel network - 16 (weak) rounds
     \end{itemize}
 
     History:
     \begin{itemize}
-        \item designed in secrey by IBM and NSA
-        \item 1978
+        \item designed in secrey by IBM and NSA in 1978
         \item US government standard
         \item private sector followed
     \end{itemize}
@@ -129,7 +128,7 @@ Often use weaker rounds (which may be faster to compute), but more of them.
 \begin{example}{AES (Advanced Encryption Standard)}
     Probably the best available today, coming from overcoming drawbacks of DES
     \begin{itemize}
-        \item softward efficiency a goal
+        \item software efficiency a goal
         \item large, variable key size (128-, 192-, 256-bit variants)
         \item open, public process for choosing and generating the cipher\\
             run by NIST and a design contest judged on pre-determined criteria
@@ -154,9 +153,8 @@ Often use weaker rounds (which may be faster to compute), but more of them.
                 table of a permutation)
             \item shift step (``diffusion''):
 
-                take 2nd row and shift right ($>>>$) by one slot, putting
-                overflow in next row, 3rd row by 2 slots, 4th row by 3 slots
-                (circular shift)
+                think of 128-bits as 4x4 array of bytes: shift the $i$th row left $i$ steps; values that 
+                fall off wrap around the same row. (circular shift)
 
                 spreads out columns
             \item linear mix (``diffusion''):
@@ -172,7 +170,6 @@ Often use weaker rounds (which may be faster to compute), but more of them.
                 Note: the key expansion could be a source of weakness (to get
                 the ten keys needed from one)
         \end{enumerate}
-    \item (think of 128-bits as 4x4 array of bytes)
     \item to decrypt, do inverses in reverse order
 \end{itemize}
 

@@ -1,122 +1,129 @@
-% Lecture 14: 07 November 2012
-\sektion{14}{Trusted Computing: Platform support for security}
-Addresses ``attack from below''
+%!TEX root = InfoSec.tex
+% Lecture 14: 3 November 2014
+\sektion{14}{Electronic voting}
 
-Tamper-resistant devices (not ``\underline{tamper-proof}'', since that doesn't
-        exist)
-
-Examples:
+Requirements
 \begin{itemize}
-    \item smart card
-        \begin{itemize}
-            \item costs \$1
-            \item 10K-100'sK RAM
-            \item 8- or 16- bit CPU
-            \item destructive attack to get crypto keys by sanding layers off to
-                    reconstruct 3D model of circuitry
-        \end{itemize}
-    \item TR (tamper resistant) ``brick'' device
-        \begin{itemize}
-            \item internal power
-            \item active defense against physical attack (cutting, poking,
-                    probing, \dots)
-            \item costs \$x00
-            \item like an 8-yr old PC capability-wise
-        \end{itemize}
+	\item only authorized voters can vote
+	\item $\leq$ 1 ballot per voter
+	\item ballots counted as cast
+	\item secret ballot; "receipt-free" (cannot prove to 3rd party how you voted)
 \end{itemize}
 
-Attacks:
+Logically, this involves two steps: (1) cast ballot into ballot box and (2) tally ballot box to get result.
+
+\textbf{Old fashioned paper ballots} are cheap to operate, easy to understand, but problematic if ballot is long/complex. Trickery is possible to: For example, \textit{chain voting} is when ``goons'' fill out a ballot and coerce people to deposit that ballot into the box and return the blank one to them; repeats. There needs to also be a chain of custody on the ballot box.
+
+\subsektion{End-to-End (E2E) crypto voting}
+\begin{example}
+	Benaloh\\
+	\begin{enumerate}
+		\item voter encrypts ballot, casts ciphertext ballot
+		\item system publishes the ciphertext (CT) ballot on a public bulletin board
+		\item at the end of the election, tally the votes.
+
+		(1) shuffle and reencrypt CT ballots\\
+			CT ballots can't be matched to originals; trustees collectively decrypt CT ballots
+
+		(2) reencrypted CT ballots public, anyone can do tally
+	\end{enumerate}
+\end{example}
+
+The tricky part is reencryption.
+\begin{definition}
+Randomized encryption: One plaintext can go to many possible cipher texts
+\end{definition}
+
+\begin{definition}
+Rencryption means that given ciphertext C, compute reenc(C) [randomized] such that
+$$\text{decrypt(reenc(C)) = decrypt(C)}$$
+Additionally, (C, reenc(C)) needs to be indistinguishable from (C, reenc(C')). Essentially, so you can't figure out which reencryption goes with which of the inputs.
+\end{definition}
+
+\subsektion{El Gamal encryption method}
 \begin{itemize}
-    \item MITM between TR device and user - need to access TR device with some
-            other device which adversary can fake
-    \item Hardware hacking attacks
-        \begin{itemize}
-            \item generate glitches by putting in strange environments
-            \item device misbehaves
-            \item hope misbehavior is useful
-        \end{itemize}
-    \item Kocher's timing attacker (1995)
-        \begin{itemize}
-            \item can extract RSA, DH keys from almost any sealed device
-            \item basic idea: encryption time depends on key
-        \end{itemize}
-    \item Fault Analysis (1997 Boneh, DeMillo, Lipton)
-        \begin{itemize}
-            \item induce error in crypto operation
-            \item ennorneous output leaks information about key
-        \end{itemize}
-    \item Differential Power Analysis
-        \begin{itemize}
-            \item idea: record power usage \underline{over time} in fine-grained
-                    way
-            \item very effective: identify path through code, easy to read out
-                    variables
-            \item devices without own power supply are particularly vulnerable
-        \end{itemize}
+	\item Public parameters g, p (like Diffie-Hellman)
+	\item Private key: x
+	\item Public key: $g^x \mod p$
+	\item to encrypt message m
+		\begin{itemize}
+			\item pick random value r
+			\item compute $(g^r \mod p,\ mg^{rx} \mod p)$
+			\item To decrypt with private key? Given (A, B) compute $A^{-x}B \mod p$
+		\end{itemize}
 \end{itemize}
 
-\begin{subsektion}{Kocher's timing attacker (details)}
-RSA is based on
-\begin{verbatim}
-Integer exp(Integer x, Integer d) {
-    s = x
-    r = 1
-    for (k = 0; k < nbits; ++k) {
-        b = d & (1 << k)
-        if (b)      r *= s      <--- depends on bit value
-        s = s*s
-    }
-    return r
-}
-\end{verbatim}
-so play game to read off bits of \texttt{d}:\\
-        guess, then if correct there will be a correlation to running time,
-        otherwise will be wrong so still know bit (time depends on number of 1's
-        in the key)
-
-Can also use power consumption instead of running time for iteration of the loop
-\end{subsektion}
-\begin{subsektion}{Fault Analysis (details)}
-To cause error, operate device outside spec
+\subsektion{Reencryption in El Gamal}
 \begin{itemize}
-    \item hot/cold
-    \item overclock
-    \item ``bad'' power supply
-    \item hit with rubber mallet
+	\item Given (A, B), generate random r'
+	\item Compute
+		\begin{align*}
+		(A*g^{r'} \mod p,\ B * g^{r'x} \mod p) 
+		&= (g^r * g^{r'} \mod p,\ m g^{rx} g^{r'x} \mod p)\\
+		&= (g^{r+r'} \mod p,\ m g^{(r+r')x} \mod p)
+		\end{align*}
+	\item We see that $r+r'$ can decrypt the message! Also, these two CTs are indistinguishable!
 \end{itemize}
-Model:
-\begin{itemize}
-    \item attacker causes a single variable to change
-    \item don't know which variable, when it changes, how it changes
-\end{itemize}
-Can attack RSA:
 
 \sidenote{
-{\bf RSA in practice}
-
-Use Chinese Remainder Theorem for optimization: use the identity
-    $$x^d \mod pq = a(x^d \mod p) + b(x^d \mod q)$$
-    where $a \mod p = 1$, $a \mod q = 0$ and $b \mod p = 0$, $b \mod q = 1$
+	\textbf{How do we know shuffler didn't cheat?}\\
+	They start with a "ballot box" $B$ (sequence of encrypted ballots) and end with $B'$, which should be equivalent (reordering of reenc of $B$)\\
 }
+
+\textbf{Proof protocol}
 \begin{itemize}
-    \item assume arbitrary error in computing $x^d \mod p$, getting
-            $x^d \mod p + \Delta$, so result of full encrpytion is
-            $$x^d \mod pq + a\Delta$$
-    \item subtract off correct result to get $a\Delta$ (lots of ways to get
-            correct result, since that's what happens when you don't mess with
-            the device)
-    \item now compute $\text{GCD}(a\Delta, pq)$. Note that $a$ is a multiple of
-            $q$, so:
-            \begin{align*}
-            \text{GCD}(a\Delta, pq)&=\text{GCD}(q\alpha\Delta, pq)\\
-              &=q\cdot\text{GCD}(\alpha\Delta,p)\\
-              &=q\cdot1 = q
-            \end{align*}
+	\item prover produces $B_1$
+	\item $B_1$ should be equivalent to $B$ and $B'$
+	\item prover (shuffler) knows the correspondence between $B$ and $B_1$, and also between $B_1$ and $B'$
+
+	Note: if $B$ is not equivalent to $B'$, then $B_1$ can't be equive to both
+	\item challenger flips coin, asks prover to show equivalence between $B$ and $B_1$, or $B'$ and $B_1$
+	\item prover ``unwraps'' the equivalence
+
+	``Look, we can get from $B'$ to $B$ by reenc with these random values then reordering like this''
+
+	BUT remember that you can't show the equivalence between all three because then the challenger would know a path from $B$ to $B'$ and you don't want that.
 \end{itemize}
-\end{subsektion}
-\begin{subsektion}{Tamper-resistant software}
+
+Play this proof game $k$ times. If the prover is lying ($B$ not equivalent to $B'$) he will get away with it with probability $2^{-k}$.
+
+This whole complicated game is designed to convince us that B and B' are in fact equivalent without telling us what the exact mapping is between B and B'
+
+\textbf{This seems like a problem} since there exists someone that know the correspondence between voters and ballots. BUT we can use multiple shuffling steps so that we only need one honest shuffler to maintain the secret ballot 
+
+\textit{Upshot: can know 1-1 correspondence between voters and published plaintext ballots, but not what the correspondence is}
+
+\textbf{A lurking attack}
+What if the voter remembers the random r used to encrypt their ballot? The voter can prove how they voted by revealing $r$.
+		$$\text{enc ballot} = (g^r \mod p, m g^{rx} \mod p)$$
+
+Fix? Introduce a trusted voting machine that the voter cannot manipulate; it encrypts ballot and refuses to reveal $r$. But yet another problem: how do you know voting machine protects integrity and confidentiality of ballot? 
+
+\subsektion{In summary}
+\begin{tabular}{|l|l|}
+\hline
+PAPER & ELECTRONIC\\
+\hline
+counting: slow, expensive & counting: fast, cheap\\
+voter sees record directly & voter does not see record directly\\
+main threat: tampering afterwards & main threat: tampering beforehand\\
+\hline
+\end{tabular}
+
+
+\textbf{PAPER + ELECTRONIC RECORDS:} method of choice
+
+Example: optical scan voting. Voter fills out paper ballot, feeds ballot not scanner, scanner records electronic record, paper ballot feeds into ballot box
+
+HYBRID COUNT
 \begin{itemize}
-    \item obfuscate to adversary
-    \item difficult to do - lots more options for what to do than with hardware
+	\item count electronic records
+	\item statistical audit for consistency of the paper records with the electronic records 
+	\item for sample of ballots, compare by hand
 \end{itemize}
-\end{subsektion}
+
+
+% ELECTRONIC RECORDS:	
+
+
+% PAPER + ELECTRONIC RECORDS: <-- method of choice

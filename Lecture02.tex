@@ -1,9 +1,10 @@
+%!TEX root = InfoSec.tex
 % Lecture 2: 19 September 2012
 \sektion{2}{Randomness}
 Best way to get a value that is unknown to an adversary is to choose a random
-value, but it's hard to get this in practice.\\
+value, but it's hard to get this in practice. Randomness (or a lack thereof) is often a weakness in a security system.\\
 
-From last time, got that PRF works as MAC.
+Recall from last lecture that a PRF works as a MAC.
 
 \sidenote{
     {\bf What is a PRF?}\\
@@ -29,14 +30,22 @@ From last time, got that PRF works as MAC.
 \end{itemize}
 
 \begin{definition}
-PRG is {\bf secure} if indistinguishable from a truly random
+PRG is {\bf secure} if its output is indistinguishable from a truly random
 value/string.\\ This is based on the game versus Mallory (can Mallory
-tell real randomness from PRG? Similar to PRF game from lecture 1),
+tell real randomness from prg? similar to prf game from lecture 1),
 where secure means that Mallory wins 50\% ($+\epsilon$) assuming
-Mallory has limited resources.
+Mallory has limited resources, where $\epsilon$ is negligible.
 \end{definition}
 
-Another desireable property is Forward Secrecy:\\
+\begin{tabular}{cccccccc}
+&&&&&&& \\
+Seed & $\xrightarrow{init}$ & $ S_0 $ & $\xrightarrow{advance}$ & $ S_1$ & $\xrightarrow{advance}$ & $S_2$ & etc.\\
+& & $\downarrow$ & & $\downarrow$ & &  $\downarrow$ &\\
+& & $output_0$ & & $output_1$ & &  $output_2$ &\\
+&&&&&&&
+\end{tabular}
+
+Another desireable property is Forward Secrecy (no backtracking):\\
 If Mallory compromises the hidden state of the generator at time $t$, Mallory
 can't backtrack to reconstruct past outputs of the generator.\\
 
@@ -50,6 +59,7 @@ $S$ and an \textbf{advance} function to step to a new state.
     \item advance: $(seed, k) \rightarrow (seed, k + 1)$
     \item output: $f(seed, k)$
     \end{itemize}
+    If Mallory knows the counter $k$ at any point, she can decrement it and run the function forwards again. 
 \end{example}
 
 \begin{example}{A PRG that is FS and secure:}
@@ -59,10 +69,11 @@ $S$ and an \textbf{advance} function to step to a new state.
     \item advance: $S \rightarrow f(S, 0)$
     \item output: $f(S, 1)$
     \end{itemize}
+    This resists backtracking because the advance function relies on the PRF
 \end{example}
 
 \subsektion{PRG as a system service}
-Hard parts: getting seed, recovering from compromise\\
+Hard parts: getting seed, recovering from compromise, even if we don't know whether the state has been compromised.\\
 
 Getting a good seed: want true randomness
 \begin{itemize}
@@ -84,24 +95,26 @@ Alternate view: \textbf{collect} data unpredictable to adversary
 
 Then: process to \textbf{extract}, or distill down to ``pure''
 randomness - feed it all into a PRF. If there's enough randomness in
-input, output will be ``pure random''.  Can, for example, do
-SHA256(all the data).\\
+input, output will be ``pure random''.  Can, for example, use
+SHA256(all the data). SHA256 consumes data one block at a time, so we don't 
+need to collect and store all the data; we can get/use the data iteratively.\\
 
  Use this to:
 \begin{itemize}
     \item seed the system PRG
-    \item renew the state (mix fresh randomness in with hidden state) using PRF,
+    \item recover/renew the state (mix fresh randomness in with hidden state) using PRF,
         to re-establish secrecy of hidden state -- do as a precaution\\
 
         NOTE: Mistake to add a single bit at a time since Mallory can keep
         up with 2 possibilities at a time, but if we wait until have a
         lot, say 256 bits of randomness, then Mallory can't keep up ($2^{256}$
-        possibilities), even knowing the algorithm/system since that's usually
-        standard
+        possibilities), even if she knows the algorithm used.
 \end{itemize}
 
 Hard to estimate actual amount of entropy in pool, so wait for too
-much randomness before mixing to remain conservative.
+much randomness before mixing to remain conservative.\\
+There's also a problem with ``headless'' machines, like servers, that don't have
+enough areas of randomness to draw from.
 
 {\bf Linux}:
 \begin{itemize}
@@ -124,7 +137,7 @@ Solutions (with their problems):
         for that key, or semi-predictable and hope Mallory doesn't guess)
 \end{itemize}
 
-\subsektion{Encrypting data for confidentiality}
+\subsektion{Message Confidentiality}
 Now may have a (passive) eavesdropper Eve:\\
 \makebox[5cm]{\ovalbox{Alice} $\rightarrow$ \ovalbox{Bob}}\\
 \makebox[5cm]{$\downarrow$}\\
@@ -160,7 +173,7 @@ Goal: ciphertext does not convey anything about plaintext
     secure by any of the definitions.
 }
 
-First approach: one-time pad (known to be semantically secure)
+{\bf First approach: one-time pad (known to be semantically secure)}
 \begin{enumerate}
     \item Alice and Bob jointly generate a long random string $k$ (``the pad'')
     \item $E(k, x) = k \xor x$
@@ -178,18 +191,19 @@ Problems:
 Idea: use a PRG to ``stretch'' a small key (called a ``stream cipher'')
 \begin{itemize}
     \item Start with fixed-size random $k$, add a ``nonce'': unique,
-      but not secret.  Use (k || nonce) to seed a PRG.
+      but not secret.  Use (k $||$ nonce) to seed a PRG.
     \item Alice and Bob run identical PRGs in parallel with same key
     \item xor messages with PRG's output
     \item Do not re-use (key, nonce) pair
 \end{itemize}
+  This approach still does not provide integrity.
 
 \subsektion{Confidentiality and integrity}
 Few approaches.
 \begin{enumerate}
-  \item Use E(x $||$ M(x)) (done by SSL/TLS).
-  \item Use E(x) $||$ M(E(x)) (done by IPSec).  This is the winner (because math).
-  \item Use E(x) $||$ M(x) (done by IPSec).
+  \item Use E(x $||$ M(x)) \hspace{1cm}SSL/TLS
+  \item Use E(x) $||$ M(E(x)) \hspace{1cm}IPSec  **This is the winner (because math).
+  \item Use E(x) $||$ M(x) \hspace{1cm}SSH\\
 \end{enumerate}
 
 \begin{theorem}

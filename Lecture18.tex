@@ -1,0 +1,125 @@
+%!TEX root = InfoSec.tex
+% Lecture 18: 17 November 2014
+\sektion{18}{Malware}
+
+\sidenote {
+
+	\textbf{Stuxnet} was a piece of malware that reportedly infected 1/5 of Iran's nuclear reactors.\\
+}
+% Stuxnet -- how it worked (see HN article lol)
+
+\textbf{Malware Taxonomy}
+\begin{itemize}
+	\item Doesn't spread + requires host: Trojan, Rootlet
+	\item Doesn't spread + runs independently: Keylogger, spyware
+	\item Spreads + requires host: virus
+	\item Spreads + runs independently: worm
+\end{itemize}
+
+\textit{What are the goals of malware?}\\
+Money: spam, steal data and credentials\\
+Launch attacks - DoS, cyberwar
+
+\textbf{Why does Window suffer the most?}
+\begin{itemize}
+	\item larger market share
+	\item more bugs, greater attack surface
+	\item usability and backward compatibility emphasized over security
+	\item fewer versions, more homogenous "monoculture, like in agriculture"
+\end{itemize}
+
+\subsektion{Hosts}
+\begin{itemize}
+	\item executable files
+	\item boot sector
+	\item macros (like in a word or excel doc)
+\end{itemize}
+
+Anything computationally powerful to allow self-replication
+(think Facebook statuses too!) 
+
+\begin{definition}
+Payload: Code that attacks
+\end{definition}
+
+\begin{definition}
+Infection mechanism: how it spreads
+\end{definition}
+
+\subsektion{Infection analysis}
+People are either susceptible, infected, or recovered (not susceptible).
+
+\textbf{Viruses life cycle}
+\begin{enumerate}
+	\item Dormant -- can then reproduce, or can attack once it's triggered
+	\item Reproduction -- then infects others
+	\item Infection -- can then go dormant
+\end{enumerate}
+
+\textbf{Worms}
+\begin{enumerate}
+	\item Target locator; find vulnerable machines
+
+	Example: For emails, scan email address books/buy lists of email addresses. For IP addresses; scan IPs
+	\item Infection propagator; compromise victim and transfer copy
+
+	Example: an email with attachments
+	\item Lifecycle manager; command and control the worm
+\end{enumerate}
+
+\sidenote {
+	\textbf{SQL slammer}\\
+
+	This was a worm that was only 404 bytes!!!! Its doubling time was less than 10 seconds and randomly scanned for IP addresses to locate targets. 90\% of susceptible machines on the internet were infected in 10 minutes
+
+	It caused a buffer overflow in SQL servers.\\
+}
+
+\textbf{Flash worm}
+Pre-scans the entire internet to pre-compute the infection tree. Has a branching factor of 10 and a height of about 7 (depends on number of vulnerable hosts).
+
+Each infection knows its subtree address so that 1 million hosts might be infected in less than 2 sec
+
+\textbf{Rootkit}
+Tools used by attackers after they compromise a system.\\
+Purpose: 
+\begin{itemize}
+	\item hide presence of attacker
+	\item allow for return of attacker at a later date
+	\item gather info about environment
+\end{itemize}
+For example, a kernal rootkit might list processes and modules and intercept API calls from applications.
+
+\subsektion{Defenses}
+\textbf{Antivirus}
+\begin{itemize}
+	\item \textbf{Traditional: signature based}
+
+	Uses substring/regex match to check software against database of byte-level or instruction-level signatures, one for each malware or family.
+
+	They are speedy, and often manually compiled or updated. They can't be proactive; are looking only for known attacks
+
+	\textbf{Evading this}
+	\begin{itemize}
+		\item encryption -- encrypt malware body (so it looks random), and decrypts upon execution
+		\item polymorphism -- decryption routine also looks different each time
+		\item metamorphism -- different instructions, same semantics (eg. \texttt{SUB eax, eax == XOR eax, eax})
+	\end{itemize}
+	
+	\item \textbf{Sandboxed emulation}
+
+	Runs code in a sandbox and checks for malware signatures in memory. This defeats polymorphism, but is slow.
+
+	\item \textbf{Behavioral Analysis}
+
+	Detects if a piece of code tries to do suspicious things, such as modifying the registry, attempting to edit system files, attemptint to hid or replicate, or connecting to known malware IPs/hosts.
+\end{itemize}
+
+\textbf{Network based defenses} \\ 
+Firewalls and etc. 
+
+\textbf{Host-based defenses}\\
+eg. nicer UI so user isn't easily tricked
+
+
+

@@ -1,203 +1,139 @@
-% Lecture 7: 08 October 2012
-\sektion{7}{Authenticating people}
-\sidenote{
-    {\bf SHA-3}
+%!TEX root = InfoSec.tex
+% Lecture 7: 1 October 2014
+\sektion{7}{SSL/TLS and Public Key Infrastructure}
+\textit{Note: See piazza for lecture slides}
 
-NIST: 1997 new standardization effort to pick SHA-3
-
-recently keccak picked
+Assumptions when logging in to, say Facebook on a Firefox browser
 \begin{itemize}
-    \item fast to implement to implement in software, and really fast in
-        hardware
-    \item in practice, probably will be implemented in software, but brute force
-        search to break it will probably be done in hardware -- slight
-        conspiracy theory that NIST picked so as to advantage attackers with
-        larger resources
+    \item Firefox is behaving correctly
+    \item HTTPS certification is working correctly
+    \item Facebook's url is indeed facebook.com
 \end{itemize}
-}
-Authenticating: Make sure someone is who they claim to be
 
-Three basic approaches, relying on
+But you must first verify all the above properties when you download firefox\\
+But you must first update IE...
+
+Essentially, you need a chain of digital certificates that verify the signatures
+on each subsequent certificate or the website in question.  
+
+So, who is the entity on top?
+{\bf Verisign}\\
+\begin{itemize}
+    \item a company in the business of verifying websites
+    \item firefox has decided to trust verisign certificates by default\\
+        But this means firefox must be working correctly, to both verify
+        certificates and trust Verasign!
+\end{itemize}
+
+Essentially, there is a \textit{massive} tree of entities we need to trust to do
+anything on the internet.
+
+\subsektion{Observations on trust}
+Trust is not transitive. 
+
+The roots of trust are (hopefully a small number of) brands, such as
+Microsoft, Dell, Mozilla, etc. Ideally, a user does not have to remember all
+the trustworthy brand urls.
+
+What's \textbf{not} here:\\
+wireless routers, the government, ISP.
+
+Even though we don't trust the network, a MITM attack is not possible because of
+authenticated key exchange and TLS/SSL protocols. Crypto allows us to not trust the
+network.
+
+\subsektion{Another problem}
+How does Firefox know that Facebook's cert was signed by Verasign? Because Facebook said so!  
+
+So what if Facebook provides a different cert authority?
+
+Theory: We would only accept it if we trust the new CA\\
+Pracice: Firefox comes with a list of trusted CAs. However, if any one of them is malicious, it can certify any other malicious urls and you are screwed.
+
+\subsektion{Attacks}
+If there exists an adversary (let's call it NSA, for non-specific adversary) and
+a rogue CA, how might they MITM you?
+
 \begin{enumerate}
-    \item something you \underline{know}
-    \item something you \underline{have}
-    \item something you \underline{are} (``biometrics'')
+    \item Issue rogue certs for target sites
+    \item Select users ot target, install MITM boxes at their ISP(s)
 \end{enumerate}
-\subsektion{Something you know: passwords}
-Password threat model:
+
+How are these attacks detected?
+\begin{enumerate}
+    \item Browser remembers old cert and alerts server if ``something's wrong'' ie. the new one seems suspicious
+    \item Server notices lots of users logging in from the same IP (or better, the same
+    device fingerprint)
+\end{enumerate}
+
+Because it's easily detected, having a NSA MITM-ing seems pretty uncommon.
+
+\subsektion{Public Key Infrastructure}
+Infrastructure to create, distribute, validate, and revoke certs. 
+
+It is comprised of a small number of roots hierarchically certifying various entities. 
+Clients trust these roots, and transitively follow the chain of trust from server back 
+to a root. The standard is X.509 (which has a full spec of thousands of pages. Really).
+
+There are generally cross-links between root CAs in that they certify each other, so that even if you remove root C as a trusted root CA, roots A and B might delegate to C,
+ meaning it is still trusted.
+
+ \subsektion{Certificates}
+ Binds an entity to a public key. Signed by some issuer (CA) and contains identity of issuer and an expiration time.
+
+ \textbf{How does a server obtain a cert?} The server generates a key pair and signs its public key and ID info with its private key to prove that server holds the private key; also provides message authentication.\\
+ The CA verifies the server's signature using the server's public key. Hard problem: How do you know that it's actually the server that's sending the info?\\
+ The CA then signs the server's public key with CA key which creates a binding. It the server can verify the key, ID, and CA's signature, it's good to go.
+
+ \textit{Almost all SSL clients except browsers and key SSL libraries are broken, 
+ often in hilarious ways.}
+
+ \textbf{Three hard problems}
+ \begin{enumerate}
+    \item Naming and identity verification. How do you know that whoever is requesting
+        a certificate is who they say they are?
+    \item Anchoring. Who are the roots that are trustworthy?
+    \item Revocation. If something goes wrong, how can they shut off a certificate?
+\end{enumerate}
+
+\subsektion{Naming and identity verification}
+\textbf{Zooko's Triangle}\\
+For any naming system, you want it to be unique, human-memorable, and decentralized. Pick 2, because you can't get all 3.
+\begin{example}
+Real names are not unique. Domain names are not decentralized. Onion addresses are not human memorable.
+\end{example}
+
+\textbf{Two types of certs}
+\begin{enumerate}
+    \item \textbf{Domain Validation}\\
+        The standard name = DNS name (domain) way of issuing certificates. It's usually automated and email-based.
+    \item \textbf{Extended Validation}\\
+        You see the name of the entity behind the url (eg. Microsoft). Browers show you the name in the URL bar and/or a green lock. The browser doesn't need to check the url in this case.
+\end{enumerate}
+
+\subsektion{Anchoring}
+Which roots should you trust? If you can issue certs, you can run MITM attacks on certs.
+
+\subsektion{Revocation}
+This is different from expiration (which is for normal key hygiene). It involves
+\begin{enumerate}
+    \item Authenticating the revocation request
+
+    If you're not careful, it is an easy DOS! Also can't ask for an old key because the entity might not have it. 
+
+    \textbf{Solution:} Sign a revocation request every time you get a new key and ``lock away'' this request. If anything happens, you can send the revocation request.
+    \item Keeping clients up to date
+
+    \textbf{Offline model:} Certificate revocation list; issue an ``anti-certificate''
+
+    \textbf{Online model:} OCSP (online cert status protocol) is a CA's server that can be queried for certificate statuses in real time
+\end{enumerate}
+Note that revocation often fails in practice. Most browsers only check for EV certs, which can be 6 months out of date.\\
+
+So what happens when a CA doesn't respond? What should your browser do?
 \begin{itemize}
-    \item user picks a password and remembers it
-    \item to log in, user gives name, password
-    \item adversary wants to log in as user
-    \item adversary \underline{might} be able to compromise server
+    \item Can't just not give you access; this would mean that the entire internet is broken when CA is down.
 \end{itemize}
-First approach:
-\begin{itemize}
-    \item server has "password database" of (name, password) pairs
-    \item system verifies match
-    \item Drawback: if adversary sees database, he/she can impersonate any user
-\end{itemize}
-Attacks (to get a user's password):
-\begin{itemize}
-    \item trick the user, or someone else who knows the password, into telling you -- surprisingly effective (``social
-            engineering'')
-    \item impersonate server, get user to ``log in'' to you (``spoofing'',
-            ``phishing'')
-    \item online guessing: try to log in with guessed name and password
-    \item offline guessing: get password DB, computational search over passwords
-    \item if user wrote down password, read it
-    \item change the password database (somehow)
-    \item watch the user log in, see what user types (``shoulder surfing'')
-    \item compromise the user's device (somehow) and record actions (e.g. "key logging")
-    \item get user's password from one site, and try it on another
-    	\begin{itemize}
-		\item most users have between 3-5 passwords they reuse
-	\end{itemize}
-\end{itemize}
-Countermeasures:
-\begin{itemize}
-    \item teach users not to divulge passwords (such as having a box saying
-            ``AOL will never ask you for your password)
-    \item make guessing harder
-    \begin{itemize}
-    	\item implement a time delay after password failure (e.g. 2 seconds); this will slow down guessing attacks
-        \item limit number of failed attempts (``velocity control''), only for
-                online guessing
-        \item avoid informative error message if user fails to log in (so don't
-                say username was right but password wrong)
-        \item vs. offline guessing: slow down the verification code
-        	\begin{itemize}
-		\item compute $Hash^n$(PRF(...)) to verify password
-		\item might slow verification by a factor of 1000
-	\end{itemize}
-            % tricky example: password doesn't match or memory error if does 
-            % character-by-character comparison and put your password right
-            % before unaccessible memory location so it'll memory error if first
-            % character right; can then shift to get next part of prefix
-    \end{itemize}
-    \item server stores hash(password) rather than password, so password
-            database doesn't convey passwords
-    \item often, iterate hash: H(H(H(H(H...(password)...)))); slows brute-force
-            search, but adversary can try ``dictionary attack'' -- hash many
-            common passwords and build a handy retrieval data structure
-    \item to frustrate dictionary attacks, use a ``salt'': for each user,
-            generate a random value $S_u$, then store in password database
-            (name, $S_u$, Hash(password, $S_u$ || password))
+Sites like Facebook are probably better at keeping their site up than VeriSign. Also, it's an easy DOS attack to take down a CA.
 
-            Then an attacker would need to build a dictionary for each user
-
-            Note that salt is in password database and it is convenient to keep
-            secret, but hopefully password is strong enough for this to be okay
-            even if the salt is leaked
-            
-            Note: in this model, the server doesn't store password
-\end{itemize}
-Guessing is a serious problem in practive: people pick lousy passwords, and
-attackers get more powerful all the time by Moore's law
-% Prof Felten's story
-% coffee and begging day's password for a week if sysadmin guessed your password
-
-% Some study on univeristy passwords gave for one univeristy beer, love, hockey,
-% jesus top passwords
-
-Reducing guessability:
-\begin{itemize}
-	\item hard to quantify guessability
-	\item only sure way: make password random, chosen from a large space (these are usually hard to remember)
-	\item format rules (e.g. special character and at least one uppercase character)
-	\item require password to be longer (probably better than format rules)
-\end{itemize}
-
-Password hygiene
-\begin{itemize}
-    \item like key hygiene
-    \item avoid patterns (``password1'', ``password2'', ...)
-    \item expire idle sessions (walk-away problem)
-    \item require old password to change password
-\end{itemize}
-
-What if user forgets password?
-\begin{itemize}
-    \item if hashed password is stored, can only set a new one
-    \item else, can tell them password, BUT how do you know it's not an
-            impostor?
-    \item clever solution by Gmail: if all else fails, we'll give you a new
-            password, but you'll need to wait before trying to log in again.
-            Then legitimate user may log in and see a warning during that time
-\end{itemize}
-
-Preventing spoofing:
-\begin{itemize}
-     \item multi-factor authentication: password + something else (e.g. token, app) 
-     \item Evidence-based (Bayesian) authentication: treat password entry as evidence, but not 100\% certainty
-     	\begin{itemize}
-	\item then use as much other evidence as possible (e.g. geolocation)
-	\item other examples: device identity, software version, behavior patterns (especially atypical behavior)
-	\item if confidence is too low, get more evidence
-	\end{itemize}
-    \item distinctive per-user display
-    \item distinctive unspoofable action before login
-
-        Windows CTRL-ALT-DEL before every time you enter password, always taking
-        you to legitimate login screen
-    \item challenge-response protocol: (sign a challenge value)
-    	\begin{itemize}
-	\item advantage: eavesdropper can't replay a log-in session
-	\item spoofer can't impersonate the user later
-	\end{itemize}
-    \item use one-time-passwords
-
-        security advantage, but logistical disadvantages: server has to serve
-        more stuff, might run out at an inconvenient time
-    \item hash-chain: user generates random value $x_0$ then chain with
-        $x_{i+1} = H(x_i)$. The one-time passwords are
-        $x_{n-1}, x_{n-2}, \dots, x_0$ in this order, and the server checks that
-        each password is the hash of the next password. User remembers $x_0$
-        and where in chain they are.
-        \begin{table}\centering\begin{tabular}{ccc}
-            user & & system\\
-            \hline
-            password (p) & & random challenge (r) \\
-            & $\xrightarrow{\text{name}}$ & \\
-            & $\xleftarrow{r \text{ (random)}}$ & \\
-            & $\xrightarrow{\text{PRF} (p,r)}$ &
-        \end{tabular}\end{table}
-    \item password + Diffie-Hellman: SPEKE (Simple Password Exponential Key
-            Exchange)
-
-        Use D-H with public prime $p$, server stores
-        $g = (\text{Hash(password)})^2 \mod p$
-
-        Results:
-        \begin{itemize}
-            \item user, server get shared secret from D-H
-            \item MITH attack doesn't work
-            \item user only has to remember a password, not a key
-        \end{itemize}
-\end{itemize}
-\subsektion{Something you have}
-Typically, tamper-resistant device stores a key or some cryptographic secret.
-
-It does crypto to prove the user has it.
-\subsektion{Something you are}
-\begin{definition}{biometric}
-
-Measuring aspect of user's body: fingerprint, iris scan, retina scan, finger
-length, voice properties, facial features, hand geometry, typing patterns, gait
-\end{definition}
-Basic scheme:
-\begin{itemize}
-    \item enroll user: take a few measurements, compute ``exemplar''
-    \item later, when user presents self, measure, compare to exemplar; compute
-            ``distance'' to exemplar
-    \item if ``close enough'', accept as valid user, else reject: tradeoff in
-    threshold between false accepts and false rejects
-\end{itemize}
-Drawbacks:
-\begin{itemize}
-    \item hard/impossible to follow good key hygiene (can't change aspects of user's body)
-    \item often requires physical presence
-    \item spoofing attacks; make image of body part, faking tempertature,
-            inductance, etc. (melted gummy bears moulded into finger-shape...)
-    \item measurement is only approximate (need to control false positives and false negatives)
-\end{itemize}
+\textbf{Result:} Browser just goes ahead if CA is down.

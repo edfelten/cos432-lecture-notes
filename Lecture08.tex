@@ -1,124 +1,121 @@
-% Lecture 8: 10 October 2012
-% System and software security - done with Crypto
-\sektion{8}{Access control}
-How you reason about and enforce rules about who's allowed to do what in the
-system
+%!TEX root = InfoSec.tex
+% Lecture 9: 6 October 2014
+\sektion{8}{System Security}
 
-\begin{definition}{Trusted subsystem}\\
-A program, with state, that is \underline{isolated} from
-the rest of the world, and interacts via \underline{declared interfaces}
-\end{definition}
+\sidenote{
+    \textbf{The Clipper Chip}\\
+    This was a chip that implemented strong symmetric encryption; however it had a \textit{law enforcement access field} (LEAF), which gave the US government a backdoor to your data. Basically, if you wanted strong crypto you sacrificed privacy in the eyes of the government.\\
 
-Access control: SUBJECT wants to do VERB on OBECT. Okay?
+    The sender uses an 80 bit sessions key, a 32 bit unit key, and a 16 bit checksum value to create a unit key. Encrypt the unit key again and you get a family key (called a leaf) that is common to all chips.
+}
 
-This deals with authentication (Who is asking?), not authorization (Does that
-person have permission?)
-
-SUBJECT: a running program\\
-VERB: an operation/API call\\
-OBJECT: resource on the system
-
-Policy: a set of (S,V,O) triples that are allowed
+\subsektion{Secure system design}
+Secure components
 \begin{itemize}
-    \item How to determine policy? (\underline{should})
-    \item How to enforce policy? (\underline{is})
+    \item in isolation (interaction only through approved interfaces)
+    \item and access control (where access control = authentication; who is asking?)
+    \item plus authorizaton (does the asker have the authority?)
 \end{itemize}
-One data structure: Access Control Matrix\\
-\parbox[c]{5cm}{\makebox[5cm]{$\longleftarrow$ objects $\longrightarrow$}\\
-\parbox[c]{1cm}{$\uparrow$\\
-\begin{sideways}subjects\end{sideways}\\
-$\downarrow$}
-\makebox[.5cm]{}
-\fbox{$V_1, V_2$}}
 
-\subsektion{Subjects and labels}
-\begin{itemize}
-    \item subject = running program
-    \item often, give labels to subjects and set policy based on labels
-
-    (+) reduces matrix size\\
-    (+) easier to make policy\\
-    (--) oversimplifies? Suppose: label = userid and means program is running
-    ``for'' userid. Alice runs a program written by Bob (example: Alice uses a
-        text editor written by Bob to edit Alice's secret file). What label?
-    \begin{itemize}
-        \item If treat as Alice: Bob's code can send Alice's secret data to Bob
-        \item If treat as Bob: Alice can't edit her secret file
-        \item If treat as Bob but special for this file: none of the labelling
-        benefits
-        \item If treat as intersection of privileges: get all the drawbacks
-    \end{itemize}
-\end{itemize}
-Store access control info:
-\begin{itemize}
-    \item as AC matrix - note that this will be very sparse
-    \item as ``profiles'' - for each user, list of what subject can do
-    \item as Access Control List (ACL) - for each object, list of (Verb,
-            Subject) pairs (who can do what to it). This is typically used
-    because small and simple in practice.
-\end{itemize}
-Who sets policy?
-\begin{itemize}
-    \item centralized (``mandatory'') - done by an authority
-
-    (+) done by a well-trained person\\
-    (+) might be required (ethical, legal, or contractual obligations)\\
-    (--) inflexible
-    \item decentralized (``discretionary'') - each object has an
-    \underline{owner}, owner set ACLs
-
-    (+) flexible\\
-    (--) every user makes security decisions
-\end{itemize}
-Groups and Roles:\\
-Group is a set of people with some logical basis; role is group with one
-member\\
-Advantages:
-\begin{itemize}
-    \item makes ACL smaller
-    \item change in status naturally causes change in access to resources
-    \item ACL explains why you have access
-\end{itemize}
-Roles can be hidden temporarily, ``wearing different hats'' (useful for testing)
-
-\subsektion{Capabilities}
-A different approach to access control: controls access without identification,
-like a physical key, ``the bearer has permission to read foo''
-
-Sometimes make them revokable, but that's a pain to do in practice
-
-Implementation: crpyto
+\subsektion{Authorization}
 \begin{enumerate}
-    \item system has a secret key $k$, capability = MAC($k$, verb || object)
-    \item public-key: one party grant permission (makes digital signature),
-    another party control access (makes sure handed valid capability - verifies
-    signature)
+    \item Access control matrix/list (like a bouncer with a list)
+    \item Capabilities (like a physical key to open a lock)
 \end{enumerate}
-Implementation: OS table\\
-OS stores a list of your capabilities; Alice makes a system call to give Bob
-capabilities for a certain file (file descriptors used to say you've an open
-file are an example)
 
-Implementation: in a type-safe programming language (like Java), pointer to an
-object is a capability
-\subsektion{Logic-based authorization}
-Define a formal logic, with primitives for
+\textbf{Access control matrix}\\
+SUBJECT wants to do VERB on OBJECT\\
+- Are we going to allow it?\\
+
+Policy: a set of allowed (subject, verb, object) triplets. So we have two questions now:
+\begin{enumerate}
+    \item How is policy set?
+    \item How is policy enforced?\\
+\end{enumerate}
+
+\subsektion{Subjects and Objects}
+The subject is a process and the object is some resource (file, open network connection, window, etc). We tend to use labels to simplify policy, and set policies based on these labels.
+
+\begin{example}
+Label a process with a userid, given that there is a limited set of users.
+\end{example}
+
+But things can get complicated
+\begin{example}
+Alice runs a program written by Bob. The program is a text editor and the file is code for Alice's startup.\\
+
+How to label this program?
 \begin{itemize}
-    \item principals/users
-    \item objects
-    \item delegation
-    \item time
+    \item Treat as Alice: program can steal Alice's data
+    \item Treat as Bob: Alice can read Bob's files
 \end{itemize}
-To get access, submit a proof that you are authorized
 
-Parties make statements by digital signing
+The common approah in OS (like Linux) is to setuid, where Bob decides if the program runs as himself or the invoker.
+\end{example}
 
-System allows for great complexity in policies, but only need simple proof-
-checking mechanism to make it work. But also need to work out a way to get
-people able to write these statements, and deal with possible large proof size
+\subsektion{Storing the policy information}
+\textbf{Access control matrix}\\
+Matrix of subjects vs. objects with allowed verbs in each cell. The downfall with these is that you get a really really big matrix with lots of empty cells; it's inefficient. 
 
-Caveat: people don't actually use complicated access control mechanisms, and
-usually just leave them as the defaults or make it visible to the whole world
+\textbf{Profiles}\\
+For each user, they have access to their row of the matrix
 
-Want to come up with a system which infers what the user wants from the way the
-user behaves (best if not visible to user)
+\textbf{Access Control List (ACL)}\\
+This is the most commont approach: For each objct, (subject, verb) pair, list whether it's allowed or not
+
+\subsektion{Who sets up the ACL?}
+\begin{itemize}
+    \item Centralized, top-down policy
+
+        Pro: Might be done by someone well-trained, might be required to be top-down (eg. medical and educational records)
+
+        Con: Inflexible, slow (for example, might have to call a help desk)
+    \item Decentralized
+
+        Pro: super flexible
+
+        Con: mistake-prone
+    \item Mixed
+
+        Owner can choose, within limits set by a centralized authority
+\end{itemize}
+
+\textbf{Groups}\\
+Logically: a set of users or groups, such that you can give access to a group.
+
+Advantages: Makes ACLs shorter, easier to understand. The group name may describe the reason for access in the system.
+
+\textbf{Roles}\\
+If a person ``wears several hats,'' you can have a role for each ``hat''. A user can step in/out of roles.
+
+\subsektion{Traditional Unix file access}
+A file belongs to one user or one group. The ACL for each operation contains some subset of (user, group, everyone).
+
+setuserid bit: if executed, treat as file owner if setuid == true and treat as invoker if setuid == false.
+
+\textbf{Capabilities}\\
+``The bearer may do VERB on OBJECT''\\
+By definition, if you have the capability, you can do the operation.
+\begin{itemize}
+    \item Cryptographic
+
+    \begin{example}
+    (VERB, OBJECT, PRF(k, VERB $||$ OBJECT)) where k is known only to the system. If you know the key k, you have the capability.
+    \end{example}
+
+    Pros: totally decentralized
+
+    Cons: if capability leaks, everyone theoretically can get capability. Revocation is hard to do.
+
+    \item OS tracking
+
+    OS keeps track of which capabilities you have, you name them by index
+\end{itemize}
+
+\subsektion{Authorization Logics}
+Formal logics, with \textbf{primitives} for PRINCIPALS (users, groups), OBJECTS, and PERMISSIONS and \textbf{rules} for delegation.
+
+So, a user might present a bunch of true statements (``I am part of this group, Felton says that this group has access, etc.'') and the engine identifies if the logic implies that the user has permissions to access the file.
+
+OR the system might require the user to come up with a proof that they have access privileges, in the form of a proof with formal logic.
+

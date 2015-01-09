@@ -1,202 +1,110 @@
-% Lecture 10: 17 October 2012
-\sektion{10}{Memory safety}
-Core problem: how to \underline{isolate} programs running on the same machine.
+%!TEX root = InfoSec.tex
+% Lecture 10: 13 October 2014
+\sektion{10}{Securing network infrastructure}
+The internet is a network of networks. Each network is an ``autonomous system'' such as ISPs. For example, Princeton is one autonomous system. Each autonomous system is run by a separate administrator, and they connect together at exchange points. There are about 40,000 autonomous system numbers assigned.
 
-\makebox[9cm]{\framebox[2.5cm]{component}\makebox[1cm]{$\leftrightarrow$}\parbox[c]{2cm}{interfaces\\\makebox[.75cm]{}\framebox[.5cm]I}\makebox[1cm]{$\leftrightarrow$}\framebox[2.5cm]{component}}\\
-\makebox[9cm]{\makebox[6.5cm]{}\makebox[2.5cm]{$\updownarrow$}}\\
-\makebox[9cm]{\makebox[6.5cm]{}\makebox[2.5cm]{\framebox[.5cm]{I}}}\\
-\makebox[9cm]{\makebox[6.5cm]{}\makebox[2.5cm]{$\updownarrow$}}\\
-\framebox[9cm]{operating system}
+\textbf{Internet routing}\\
+Routing is based on BGP (border gateway protocols). BGP is how autonomous systems talk to each other about routing information. IP is the actual routing protocol. 
 
-Goals:
+\textbf{Shortest path routing}\\
+This is a simplified way of viewing BGPs. Think of each autonomous system as a single node.
 \begin{itemize}
-    \item limit addresses a program can read/write
-    \item prohibit jumps outside prgram's own code (except via interfaces)
-\end{itemize}
-Common themes:
-\begin{itemize}
-    \item enforcement mechanism more powerful than the program
-    \item enforcement mechanism must start first
-\end{itemize}
-Two styles of memory safety enforcement
-\begin{itemize}
-    \item hardware-based (e.g. most OSes)
-    \item software-based (e.g. most browsers)
-\end{itemize}
-\subsektion{Hardware-based memory safety}
-\begin{itemize}
-    \item virtual memory:
+	\item routers talk to each other
+	\item they exchange topology and cost info
+	\item each router calculates the shortest path to destination based on its neighbors' distances
 
-\begin{tabular}{rcc}
-address & \framebox[4cm]{virtual page \#} & \framebox[3cm]{offset}\\
-        & $\downarrow$ & \multirow{3}{*}{\begin{sideways}$\xleftarrow{\qquad\qquad\quad}$\end{sideways}}\\
-        & \ovalbox{\parbox[c]{2cm}{\centering translate\\via page\\table}} &\\
-        & $\downarrow$ &\\
-physical address & \framebox[4cm]{physical page \#} & \framebox[3cm]{offset}
-\end{tabular}
+		``If my closest neighbor can get to destination in 4 steps, then I can get there in 5 steps''
 
-            page table, separate for each process
-            \begin{table}[h!]\centering\begin{tabular}{c|c}
-            virtual page \# & physical page \#\\
-            \hline
-            0 & 73\\
-            \hline
-            1 & 0\\
-            \hline
-            $\vdots$ & $\vdots$
-            \end{tabular}\end{table}
-
-            If physical page number isn't in the page table, then that program
-            can't access it.
-    \item page protection bits: for each page, say whether current program
-        \begin{itemize}
-            \item can read
-            \item can write
-            \item can execute (on some machines)
-        \end{itemize}
-\end{itemize}
-%Use same mechanism for controlling disk and network access hardware by mapping
-%to region of virtual addresses?
-
-{\bf OS Kernel}\\
-Special program with superpowers -- can set up page table, protection bits, etc.
-
-Hardware ``priviledged'' bit:
-\begin{itemize}
-    \item in privileged mode, can modify permissions
-    \item on when kernel is running, off when not
-\end{itemize}
-Certain instructions will run only in privileged mode.
-
-System call:
-\begin{itemize}
-    \item special way for ordinary code to call the kernel
-    \item forces call to go through a special interface -- to a
-        \underline{fixed} program address in kernel
-    \item special ``syscall'' (hardware) instruction, simultaneously:
-        \begin{itemize}
-            \item sets privileged bit to true
-            \item sets program counter to a fixed value (forced to go through
-                    entry point where everything will be checked)
-        \end{itemize}
+		BUT routers can lie about paths and costs
+	\item router calculates the next hop based on neighboring path costs
+	\item router forwards packet to the next hop
 \end{itemize}
 
-{\bf Hardware-based: pros and cons}
-\begin{description}
-    \item[+] simple mechanisms, can do fast checking
-    \item[--] slow to cross protection boundaries
-    \item[--] narrow interface between components
-    \item[--] hard to layer this on itself (if a program wants to use hardware-
-            based protection for its own internals)
-\end{description}
-\subsektion{Software-based memory safety}
-Big fad back around 1970 then almost died out; came back in late 90's with
-widespread use of the Internet
+An adversary node can lie about its costs and route packets to itself. There might exist a tunnel for packet reinjections if Z and Z' are both adversarial. Then, Z can modify all packets and send it to Z' for reinjection. This is called prefix hijacking
 
-{\bf Usual model}
+\subsektion{Prefix Hijacking}
+(This often happens as a result of accidental misconfiguration). 
+
+\begin{example}
+China ``hijacked the internet'' when it announced route to a random-ish 15\% of the internet. It is an autonomous system (AS) big enough that it didn't get crushed under the load, and simply forwarded the traffic while the user did not notice anything.
+\end{example}
+
+Malice is unlikely through prefix hijacking
+\begin{enumerate}
+	\item can't bypass app-level encryption
+	\item can't store all the traffice
+	\item it's very easily detectable
+\end{enumerate}
+
+\subsektion{How to defend?}
+Can crypto help? Remember that AS's can lie about their own links and costs and about
+what other nodes said. So, crypto \textit{can} prevent lying about what neighbors said but it \textit{can't} prevent lying about your own links.
+
+\textbf{Routing relies on trust}\\
+It is a different adversary model compared to application-layer security. 
 \begin{itemize}
-    \item code producer: writes and delievers code
-    \item code consumer: checks and runs code
-    \item goal: protect consumer from producer
+	\item small number of AS's
+	\item AS's are well known
+	\item and physically connected
+	\item AS's also don't want to advertise shorter paths than reality because then
+		they will likely be overloaded with traffic and go down
 \end{itemize}
-{\bf Approach 1: interpretation}
+All of the above are natural protection against attacks. It's not an ideal setup, but it's not terrible either. Is there a much better way to design BGP if we were to do it over? Unclear.
 
-\begin{tabular}{ccc}
-CP & & CC\\
-\framebox[3cm]{source code} & $\xrightarrow{\qquad\qquad}$ & \ovalbox{\parbox[c]{3cm}{\centering interpreter\\checks safety\\as it runs}}
-\end{tabular}
-
-Example: JavaScript
-
-Pros: portable, rich interfaces, straightforward to implement
-
-Cons: must use certain programming language. interpretation is often slow
-
-{\bf Approach 2: type-safe language}
-Example: Java in browser
-
-Java type safety - every access to an object
+\subsektion{IP packet}
+These contain source and destination IP addresses. Can these things be spoofed? 
 \begin{itemize}
-    \item goes to an object that this program created, and
-    \item obeys \underline{private}, \underline{protected} keywords
-\end{itemize}
-\begin{theorem*}{\textnormal{(conjecture)}}
-If memory is allocated only within a program's own space, then type safety
-implies memory safety.
-\end{theorem*}
-
-\begin{tabular}{ccc}
-CP & & CC\\
-\framebox[3cm]{source code} & &\\
-$\downarrow$ & &\\
-\ovalbox{compiler} & &\\
-$\downarrow$ & &\\
-\framebox[3cm]{.class files} & $\xrightarrow{\qquad\qquad}$ & \ovalbox{verify}\\
-& & $\downarrow$ if ok\\
-& & \ovalbox{interpret/compile}
-\end{tabular}
-
-Pros and cons:
-\begin{description}
-    \item[+] support rich interfaces
-    \item[+] untrusting components can run together
-    \item[--] some compilation/interpretation at the consumer (slow, complex)
-    \item[--] have to use one language? Java class files very dependent on the
-        Java type system, so compiling other kinds of files into .class hard
-\end{description}
-
-{\bf Approach 3: insert checking code}
-
-\begin{tabular}{ccc}
-CP & & CC\\
-\framebox[3cm]{source code} & &\\
-$\downarrow$ & &\\
-\ovalbox{compiler} & &\\
-$\downarrow$ & &\\
-\framebox[3cm]{machine code} & $\xrightarrow{\qquad\qquad}$ & \ovalbox{transformer}\\
-& & $\downarrow$\\
-& & \framebox[3.5cm]{safe machine code}
-\end{tabular}
-
-Transformer inserts checking code before every read, write, or jump instruction.
-
-Complexities:
-\begin{itemize}
-    \item insert code $\rightarrow$ recalculate offsets in the code
-    \item can't let the code jump past the inserted checks
+	\item source IP? yes
+	\item destination IP? no, that doesn't even make sense
 \end{itemize}
 
-{\bf Approach 4: proof-carrying code}
+Nodes can only verify claimed source address back one hop; this is why IPs are spoofable. For example, DoS attacks spoof their return IP addresses.
 
-\begin{tabular}{ccc}
-CP & & CC\\
-\framebox[3cm]{source code} & &\\
-$\downarrow$ & &\\
-\ovalbox{compiler} & &\\
-$\downarrow$ & &\\
-\framebox[3cm]{machine code} & $\xrightarrow{\qquad\qquad}$ & \multirow{2}{*}{\ovalbox{\parbox[c]{1.25cm}{verify\\proof}}}\\
-\framebox[3cm]{proof} & $\xrightarrow{\qquad\qquad}$ &\\
-& & $\downarrow$ if ok\\
-& & \framebox[3cm]{machine code}
-\end{tabular}
+\subsektion{Ingress/egress filtering}
+(This is what takes place at the ``gateway'' of the AS)
 
-Where does the proof come from? Use a certifying compiler: starting with a
-typesafe program, as the compiler goes through transformations to lower-level
-representions of the program it also transforms the proof of why safe to that
-level. Note that the compiler can always add additional checking code in order
-to make the proof simpler.
+Ingress filtering: discard incoming packet if source IP is inside the AS (because why would that happen in real life? It wouldn't). This protects against types of DoS. Potects yourself.
 
-What a safety proof looks like: (in assembly code)
+Egress filtering: discard outgoing packet if source IP is outside. This protects against types of DoS if adversary takes over internal computer and tries to send DoS packets. Protects the rest of the internet.
+
+\textbf{DDoS is easy if you have a lot of zombies}\\
+\textit{More difficult:} DoS from a single machine with more traffic than machine is capable of. So the goal? Amplication of traffic volume.
+
+\textbf{Smurf attack}\\
+Attacker broadcasts ECHO request with spoofed source IP address (this is the victim's IP address). All networks hosts (broadcast recipients) hear broadcast and respond. Except they respond to the victim, who is overwhelmed with traffic.
+
+\subsektion{DNS attacks}
+DNS: The system that takes a domain name and translate it into an IP address.
+
+\textit{User requests example.com $\rightarrow$ recursive name server $\rightarrow$ root server $\rightarrow$ recursive name server $\rightarrow$ TLD name servers $\rightarrow$ recursive name server $\rightarrow$ thousands of name servers $\rightarrow$ recursive name server $\rightarrow$ 192.168.31}
+
+\textbf{Root servers}\\
+Requests are delivered to the root server who is closest and available.
+
+\textbf{Cache poisoning}\\
+In the words of Wikipedia: ``DNS spoofing (or DNS cache poisoning) is a computer hacking attack, whereby data is introduced into a Domain Name System (DNS) resolver's cache, causing the name server to return an incorrect IP address, diverting traffic to the attacker's computer (or any other computer).''
+
+\subsektion{Prevention: DNSSEC}
+DNS root servers: root of trust\\
+DNS hierarchy: chain of trust; each name server signs public keys of servers it delegates to. Resolvers and some clients have root public keys built in. This only authenticates -- no encryption.
+
+\subsektion{Crypto and layers}
+Crypto can be incorporated into different layers:\\
+Secure sockets layer (SSL) and transport layer security (TLS)
 \begin{itemize}
-    \item annotate each instruction iwth a precondition and a postcondition
-    \item to prove safety, prove:
-        \begin{itemize}
-            \item when program starts, precondition of first instruction is true
-            \item for every instruction, if precondition and execute
-                instruction, then afterward postcondition will be true
-            \item for every instruction, precondition implies (read/write/jump)
-                instruction is safe to execute
-            \item postcondition of each instruction implies precondition of
-                every instruction that can come next
-        \end{itemize}
+	\item Application level security (or rather, between application and transportation)
+	\item Authentication hostnames, encrypts sessions over TCP
+	\item Keys verified using certs/certificate authorities
 \end{itemize}
+IPSec
+\begin{itemize}
+	\item Network layer security
+	\item Authenticates IP addresses, encrypts IP packets
+	\item Keys are distributed/verified by DNA or manually
+	\item It's a mess because (1) key distribution sucks (2) authenticating IP addresses is hard for user to sanity check (3) network level is hard to implement since IP is stateless
+\end{itemize}
+
+\sidenote {
+	\textbf{NSA MUSCULAR}\\
+	NSA was physically tapping into links between Google data centers, and between Yahoo data centers. IPSec would have stopped this.
+}

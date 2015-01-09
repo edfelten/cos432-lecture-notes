@@ -1,0 +1,121 @@
+%!TEX root = InfoSec.tex
+% Lecture 22: 3 December 2014
+\sektion{22}{Human Factors in Security}
+
+Why do users maker errors?
+\begin{itemize}
+	\item Bad UI/UX design often leads to mistakes
+
+		Ex. if pilot makes mistake, there needs to be a change in design to make that error harder to make; the blame is on the system and the person
+	\item Rational ignorance, because the cost of informing yourself is greater than 	the cost of a breach. 
+
+		Security/system is too difficult to understand
+	\item Heuristic decision making (mental shortcuts)
+	\item Cognitive biases
+
+		There are certain well-established biases that exist that cause people to make certain types of errors. An adversary might exploit people's cognitive biases to make mistakes
+\end{itemize}
+
+Often, \textit{relying on a smart user} has hidden costs. For example, Prof. Felton has an anecdote about calling people to authenticate emails, which was a hidden cost for him.
+
+Another common mistake is \textit{designing for yourself}. This can be a problem for other users who can't make sense of your UI, or even for your future self, who may have forgotten how to navigate your UI.
+
+\subsektion{Wifi Encryption}
+Open wifi-networks are not encrypted, but pretty much everybody recommends encrypting wifi networks. Additionally, PUwireless is a closed network that should be encrypted, but isn't.
+
+\textbf{Problem: Key distribution} known to all devices. For example, someone buys a wifi access point, and want to be able to access the internet. Users don't know how to enter in the key.
+
+\textbf{Why don't people encrypt?}
+\begin{itemize}
+	\item Encryption is a bad out-of-box experience (when people lose the key/can't find it/etc.)
+	\item Lack of I/O on some devices 
+	\item Need to remember key over time, which is a pain
+\end{itemize}
+
+\textbf{How could we fix this?}
+\begin{itemize}
+	\item exploit physical proximity between devices
+		\begin{itemize}
+			\item "tap to pair this device"
+			\item line-of-sight medium: one device can make a sound that another device can hear/etc.
+		\end{itemize}
+	\item physical transfer of "dongle" that plugs into each of these objects
+	\item try to adopt trust on first use (TOFU approach)
+		\begin{itemize}
+			\item First time two things connect, we believe that it works from there on out and that they are who they say they are. We assume key won't change over device
+			\item This will prevent an impersonation of a device
+
+				Warning-based approach: allow things to connect and warn the user when a new devices are connected ``Hey, someone just connected to your network, is that right?''
+		\end{itemize}
+\end{itemize}
+
+\subsektion{Email Encryption}
+\sidenote {
+	\textbf{A paper titled ``Why Johnny Can't Encrypt''}\\
+	The authors took  PGE e-mail users and provided them with a scenario. They prepoppulated the inbox with Alice and Bob's communication, and then asked the users to provide secure messages to people. \\
+
+	People made ALL kinds of mistakes and seriously screwed up the security chain. Some even sent their own root passwords.\\
+}
+
+This was a user study of secure email which showed that there are LOTS of security problems and LOTS of security errors.
+
+\textbf{Why?}
+\begin{itemize}
+	\item UI design mistakes
+	\item Metaphor mismatch
+
+		For example, the term ``key'': There are two different kinds of keys and no analogy for which is which. This is confusing for the user.
+
+		\textit{Sidenote}: The paper asks: What is the right metaphor for thinking about encryption/signatures? One option: cipher text is very much so like a locked treasure chest, but that's still confusing
+	\item User has to do a lot of work upfront before communicating at all
+
+		For example, users need to spend a lot of time encrypting prior to sending stuff out
+\end{itemize}
+
+\textbf{So what's the user's role?}
+\begin{itemize}
+	\item Control mechanism (think blocking cookies)
+	\item Can use tools (such as clearing history)
+	\item State goals (tell the system what you want)
+\end{itemize}
+
+The \textbf{goal is to have naturally secure interfaces}. For example, the light comes on when camera comes on (though in some devices this can be bypassed). Another example is a push-to-talk button on microphone; the microphone only works when you push it. 
+
+\subsektion{Social barriers to adoption}
+Social barriers to using encrypted email include
+\begin{itemize}
+	\item Stigma attached to use of crypto:\\
+		Usually it's used by someone who's a bit paranoid, don't want to be seen as the kind of person who would encrypt their e-mail
+	\item Etiquette of encrypting message:\\
+		A reply message should be encrypted if and only if the original message was; it's awkward if that's not the case
+	\item Encryption as a barrier to recruitment:\\
+		Cost up front because it makes it harder to bring people in, the benefit comes later; this was the way the system was set up.
+	\item Warning messages:\\
+		Dialog fatigue - too many warning messages on which people just click OK\\
+		Counter measures \textit{(though all have limited value)}:
+			\begin{itemize}
+				\item vary design of the dialog boxes
+				\item No by default
+				\item Delay activation of OK button
+				\item "Hey you really need to read this"
+			\end{itemize}
+\end{itemize}
+
+\sidenote{
+	\textbf{Microsoft's NEAT/SPRUCE framework for security/privacy UX}\\
+	\begin{itemize}
+		\item Is your security or privacy experience Necessary? Can you eliminate or defer user decision?
+		\item Is your security or privacy experience Explained? Do you present all info user needs to make decision? Is it SPRUCE?
+		\item Is it Actionable? That is, is there a set of steps that the user can follow to make the decision correctly
+		\item Is your system Tested? Is it NEAT for all scenarios, both benign and malicious?
+		\item When presenting a choice to the user:
+		\begin{itemize}
+			\item Source: say who is asking for the decision
+			\item Process: give user actionable steps to decision
+			\item Risk: explain what bad thing could happen if user makes wrong decision
+			\item Unique knowledge: tell user what information they bring to the decision
+			\item Choices: list available options, clearly recommend one
+			\item Evidence: highlight info user should include/exclude in making decision\\
+		\end{itemize}
+	\end{itemize}
+}
