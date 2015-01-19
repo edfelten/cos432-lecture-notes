@@ -1,4 +1,112 @@
 %!TEX root = InfoSec.tex
 % Lecture 17: 12 November 2014
-\sektion{17}{}
+\sektion{17}{Anonymous Communication}
 \textit{Guest lecture: Prof. Arvind Narayanan}
+
+Two centuries ago if you wanted a book you went to the library. In a small town, people locally knew what you were viewing. Today, people locally probably don't know what you're viewing, but other people and agencies globally might know.
+
+Crypto for security has clear goals and technical defintitions, but crypto for privacy is fuzzy and often morally ambiguous.
+
+Crypto can help you hide your identity and enables powerful forms of anonymous communication:
+\begin{itemize}
+    \item Payments
+    \item Publishing
+\end{itemize}
+
+Is the internet anonymous? {\bf NO}
+\begin{itemize}
+    \item Best case: pseudonymity
+    \item Worst case: identified
+    \item Encryption does not hide identities
+\end{itemize}
+\subsektion{Pseudonymity}
+\begin{itemize}
+    \item Use of (usually random) psuedonym as ID
+    \item Often confused for anonymity
+    \item AOL example: AOL released search logs but replaced searcher account names with numbers. Based on the information in the user's searches, the person associated with No. 4417749 was identified in real life.
+    \item The problem: one user is always logging into the same acocunt, so search patterns can reveal identity
+\end{itemize}
+
+\medskip
+{\bf Anonymity via Unobservability}
+\begin{itemize}
+    \item Hiding the existence of communication {\it or}
+    \item Making suspicious traffic look like innocent traffic {\it or}
+    \item Piggybacking suspicious traffic on innocent traffic (steganography)
+\end{itemize}
+
+\subsektion{Anonymity in Numbers (Tor)}
+\begin{itemize}
+    \item Lots of people want anonymity
+    \item All use the same system/protocol
+    \item Adversary can't tell who's who $\Rightarrow$ anonymous within some {\it anonymity set}
+    \item How it works: a set of users send their messages through the communication network. The messages are mixed up in the network and sent to the receivers.
+    \item Idea: you know which users are using this communication network, but you don't know who sent which message
+     \item {\bf Key Idea 1: Trusted Mix} \begin{itemize}
+                  \item This is not as anonymous as you may think: the sender must tell the mix the recipient address, and the mix is able to view all the messages
+                  \item Problem: aversary can flood the mix with fake senders
+              \end{itemize}
+     \item {\bf Key Idea 2: Encryption} \begin{itemize}
+                  \item Encrypt sender-mix message with public key encryption
+                  \item Problem: mix knows both identities
+              \end{itemize}
+     \item {\bf Key Idea 3: Mix Cascade} \begin{itemize}
+                  \item A chain of 3 mixes
+                  \item Even if the middle one is compromised, you still can't see the relationship between the input and output of the first and third mixes
+                  \item OK as long as one mix is honest
+                  \item Problem: but how do we encrypt in this context?
+              \end{itemize}
+     \item {\bf Key Idea 4: Layered Encryption} \begin{itemize}
+                  \item Like an onion, successively encrypt message in reverse order
+                  \item Each mix peels off a layer of encryption when sending the message, then forwards
+              \end{itemize}
+     \item {\bf Key Idea 5: Randomized Routing} \begin{itemize}
+                  \item Sender pre-selects random path through network
+                  \item All address information is encrypted: when each router decrypts, it finds the address of the next router in the path
+                 \item Routers know nothing but previous and next node
+                 \item This is secure because an adversary cannot listen to every link on a network
+              \end{itemize}
+     \item Problem: How can the reciever respond to the sender? \begin{itemize}
+                  \item Sender pre-selects return path as well
+                  \item Sender sends layered encryption of return path with original message
+                  \item Receiver knows only first router in return path
+                  \item Each router knows successive router
+              \end{itemize}
+     \item Problem: High-latency vs. low-latency \begin{itemize}
+                  \item So far this works for email
+                  \item But it seems too slow for web browsing because you'd need to route each packet. This is computationally costly and more messages being sent leads to more risks. {\it Note: asymmetric encryption is slow.}
+              \end{itemize}
+     \item {\bf Key Idea 6: Circuit Switching} \begin{itemize}
+                  \item Build a circuit for each session, instead of a different route for each packet
+                  \item Use above protocol for key exchange, then Alice shares a symmetric key with each router in path
+                  \item Use layered symmetric encryption for regular messages within a session, with the same path used for both directions $\Rightarrow$ In reverse, each router {\it adds} a layer of encryption
+              \end{itemize}
+     \item {\bf Key Idea 7: Tunneling} \begin{itemize}
+                  \item Conceptually, Alice $\leftrightarrow$ $R_2$ is tunneled through Alice $\leftrightarrow$ $R_1$
+                  \item But it seems too slow for web browsing because you'd need to route each packet. Remember: asymmetric encryption is slow.
+              \end{itemize}
+     \item Problem: How can Alice trust routers?\begin{itemize}
+                  \item Key exchange requires public keys: routers are authenticated
+              \end{itemize}
+     \item {\bf Key Idea 8: Directory Server (How Tor Works)} \begin{itemize}
+                  \item{1.} Alice's Tor client obtains a list of Tor nodes from a directory server
+                  \item{2.} Alice's Tor client picks a random path to destination server. All links are encrypted except for the link between the exit node and the receiver
+                 \item{3.} If at a later time, the user visits another site, Alice's Tor client selects a second random path. {\it Again the link between the exit node and the receiver is not encrypted.}
+              \end{itemize}
+     \item {\bf Potential attack: Traffic analysis - timing correlation} \begin{itemize}
+                  \item Adversary watches Alice - first router link and last router - Bob link
+                  \item The timing patterns are highly correlated, so Tor is vulnerable to a ``global passive adversary"
+              \end{itemize}
+\end{itemize}
+
+Note: Tor is used for both good and bad, and there's no way to keep only the good uses.
+
+Note: exit nodes can read all unecrypted messages.
+
+Note: Tor does not provide data encryption - the website/server still needs to provide its own encryption mechanism if it wants an encrypted connection.
+
+{\bf Anonymous publishing}: run a webserver without revealing your IP address by picking a random rendevouz point. Both Alice and the server anonymously connect to it.
+\begin{itemize}
+     \item Silk road is an example
+\end{itemize}
+
