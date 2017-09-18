@@ -1,3 +1,9 @@
+## macOS file metadata
+.DS_Store
+
+## Temporary files
+*.*~
+
 ## Core latex/pdflatex auxiliary files:
 *.aux
 *.lof
