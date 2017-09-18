@@ -22,11 +22,25 @@ Recall from last lecture that a PRF works as a MAC.
     \item assume it ``exists'' but it's scarce and hard to get
 \end{itemize}
 
+{\bf In security, "random" means unpredictable}:
+\begin{itemize}
+    \item to whom? E.x., in a PRF, the result can be considered random with respect to someone who does not know the secret key.
+    \item when?
+\end{itemize}
+
 {\bf Pseudorandom generator (PRG)}:
 \begin{itemize}
-    \item takes a small ``seed'' that's truly random
-    \item generates a long sequence of ``good enough'' values
-    \item maintains ``hidden state''
+    \item takes a small ``seed'' that's truly random as input E.x. a few coin flips, instead of flipping a coin each time
+    \item generates a long sequence of ``good enough'' values, i.e. unlimited pseudorandomness.
+    \item maintains ``hidden state'' that changes as generator operates
+    \item output is indistinguishable from truly random output in the practical sense, i.e. an efficient party can not distinguishs
+    \item the generator needs to be deterministic, because if it is not it must be driven by some kind of randomness, and the reason we are doing this is because randomness is scarce
+\end{itemize}
+
+{\bf randomness service}:
+\begin{itemize}
+    \item OS service, callable by application
+    
 \end{itemize}
 
 \begin{definition}
@@ -45,9 +59,11 @@ Seed & $\xrightarrow{init}$ & $ S_0 $ & $\xrightarrow{advance}$ & $ S_1$ & $\xri
 &&&&&&&
 \end{tabular}
 
-Another desireable property is Forward Secrecy (no backtracking):\\
+Another desireable property is {\bf Forward Secrecy} (no backtracking):\\
 If Mallory compromises the hidden state of the generator at time $t$, Mallory
 can't backtrack to reconstruct past outputs of the generator.\\
+
+Note that if an adversary breaks in at time t, they {\textit can} play it forward and see the outputs at time t + x
 
 Most PRGs are made up of an \textbf{init} function to initialize state
 $S$ and an \textbf{advance} function to step to a new state.
@@ -69,18 +85,19 @@ $S$ and an \textbf{advance} function to step to a new state.
     \item advance: $S \rightarrow f(S, 0)$
     \item output: $f(S, 1)$
     \end{itemize}
-    This resists backtracking because the advance function relies on the PRF
+    This resists backtracking because the advance function relies on the PRF, and the seed is overwritten
 \end{example}
 
-\subsektion{PRG as a system service}
-Hard parts: getting seed, recovering from compromise, even if we don't know whether the state has been compromised.\\
+\subsektion{randomness as a system service}
+Hard parts: getting seed, recovering from compromise, even if we don't know whether the state has been compromised. We want to be continuously recovering because we might not notice a compromise.\\
+Create a new function, $recover(S, random data) \rightarrow state$\\
 
 Getting a good seed: want true randomness
 \begin{itemize}
     \item special circuit
     \item ambient audio/video: lava lamps! (lavarand)
 \end{itemize}
-problems: not \emph{truly} random (correlations)\\
+problems: physical random processes are difficult in practice, not \emph{truly} random (correlations)\\
 
 Alternate view: \textbf{collect} data unpredictable to adversary
 \begin{itemize}
@@ -103,7 +120,7 @@ need to collect and store all the data; we can get/use the data iteratively.\\
 \begin{itemize}
     \item seed the system PRG
     \item recover/renew the state (mix fresh randomness in with hidden state) using PRF,
-        to re-establish secrecy of hidden state -- do as a precaution\\
+        to re-establish secrecy of hidden state\\
 
         NOTE: Mistake to add a single bit at a time since Mallory can keep
         up with 2 possibilities at a time, but if we wait until have a
@@ -138,7 +155,7 @@ Solutions (with their problems):
 \end{itemize}
 
 \subsektion{Message Confidentiality}
-Now may have a (passive) eavesdropper Eve:\\
+Now may have a (passive) adversary/eavesdropper Eve who can only listen:\\
 \makebox[5cm]{\ovalbox{Alice} $\rightarrow$ \ovalbox{Bob}}\\
 \makebox[5cm]{$\downarrow$}\\
 \makebox[5cm]{\ovalbox{Eve}}\\
@@ -154,17 +171,19 @@ Message processing:\\
 \makebox[1.5cm]{}\makebox[2.5cm]{key $k$}
     \makebox[1.5cm]{}\makebox[2.5cm]{key $k$}\\
 
-Goal: ciphertext does not convey anything about plaintext
+Goal: ciphertext does not convey anything about plaintext. Bob can recover text, Eve cannot.
+
+{\textbf Semantic Security}
 
 \sidenote{
-    {\bf ``encryption game'' against Mallory:}
-
-    \hspace*{0.5 cm} Mallory chooses two pieces of plaintext\\
+    {\bf ``encryption game'' against Eve:}\\\\
+    \hspace*{0.5cm} allow Eve to pick piece of plaintext, we provide encryption $E_k(x_i)$ until she is satisifed
+    \hspace*{0.5 cm} Eve chooses two pieces of plaintext\\
     \hspace*{0.5cm} We flip a coin and encrypt one of them\\
-    \hspace*{0.5cm} Mallory guesses which was encrypted: wins if right
+    \hspace*{0.5cm} Eve guesses which was encrypted: wins if right
 
-    We say that the encrpytion method is secure if Mallory can't do
-    better than random guessing (50/50) + $\epsilon$.  This is known as
+    We say that the encrpytion method is  secure if Eve can't do
+    better than random guessing (50/50) + negligible $\epsilon$.  This is known as
     \textbf{semantic security}.\\
 
     Note: if we were being more rigorous in our definitions, we would use a
@@ -190,8 +209,8 @@ Problems:
 \end{enumerate}
 Idea: use a PRG to ``stretch'' a small key (called a ``stream cipher'')
 \begin{itemize}
-    \item Start with fixed-size random $k$, add a ``nonce'': unique,
-      but not secret.  Use (k $||$ nonce) to seed a PRG.
+    \item Start with fixed-size random $k$, add a ``nonce'': unique, i.e. don't resue nonce value,
+      but not secret.  Use (k $||$ nonce) to seed a PRG. ($||$ means concatenate)
     \item Alice and Bob run identical PRGs in parallel with same key
     \item xor messages with PRG's output
     \item Do not re-use (key, nonce) pair
