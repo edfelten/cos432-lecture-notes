@@ -210,7 +210,7 @@ Problems:
 Idea: use a PRG to ``stretch'' a small key (called a ``stream cipher'')
 \begin{itemize}
     \item Start with fixed-size random $k$, add a ``nonce'': unique, i.e. don't resue nonce value,
-      but not secret.  Use (k $||$ nonce) to seed a PRG. ($||$ means concatenate)
+      but not secret.  Use PRF(k, nonce) to seed a PRG.
     \item Alice and Bob run identical PRGs in parallel with same key
     \item xor messages with PRG's output
     \item Do not re-use (key, nonce) pair
