@@ -86,6 +86,8 @@ $S$ and an \textbf{advance} function to step to a new state.
     \item output: $f(S, 1)$
     \end{itemize}
     This resists backtracking because the advance function relies on the PRF, and the seed is overwritten
+
+    NOTE: The advance function should be performed after generating an output, and not the other way around. If you do not advance after generating the output, the hidden state that was used to generate the most recent output stays in memory. If at any time between this and the next time you generate a new output the adversary is able to compromise your system, they would learn the hidden state and are able to reconstruct the last output (not backtracking resistant!).
 \end{example}
 
 \subsektion{randomness as a system service}
