@@ -37,7 +37,7 @@ Recall from last lecture that a PRF works as a MAC.
     \item the generator needs to be deterministic, because if it is not it must be driven by some kind of randomness, and the reason we are doing this is because randomness is scarce
 \end{itemize}
 
-{\bf randomness service}:
+{\bf Randomness service}:
 \begin{itemize}
     \item OS service, callable by application
     
@@ -59,11 +59,11 @@ Seed & $\xrightarrow{init}$ & $ S_0 $ & $\xrightarrow{advance}$ & $ S_1$ & $\xri
 &&&&&&&
 \end{tabular}
 
-Another desireable property is {\bf Forward Secrecy} (no backtracking):\\
+Another desirable property is {\bf Forward Secrecy} (backtracking resistance):\\
 If Mallory compromises the hidden state of the generator at time $t$, Mallory
 can't backtrack to reconstruct past outputs of the generator.\\
 
-Note that if an adversary breaks in at time t, they {\textit can} play it forward and see the outputs at time t + x
+Note that if an adversary breaks in at time $t$, they \textit{can} play it forward and see the outputs at time $t + x$
 
 Most PRGs are made up of an \textbf{init} function to initialize state
 $S$ and an \textbf{advance} function to step to a new state.
@@ -88,7 +88,7 @@ $S$ and an \textbf{advance} function to step to a new state.
     This resists backtracking because the advance function relies on the PRF, and the seed is overwritten
 \end{example}
 
-\subsektion{randomness as a system service}
+\subsektion{Randomness as a system service}
 Hard parts: getting seed, recovering from compromise, even if we don't know whether the state has been compromised. We want to be continuously recovering because we might not notice a compromise.\\
 Create a new function, $recover(S, random data) \rightarrow state$\\
 
@@ -173,11 +173,11 @@ Message processing:\\
 
 Goal: ciphertext does not convey anything about plaintext. Bob can recover text, Eve cannot.
 
-{\textbf Semantic Security}
+\textbf{Semantic Security}
 
 \sidenote{
-    {\bf ``encryption game'' against Eve:}\\\\
-    \hspace*{0.5cm} allow Eve to pick piece of plaintext, we provide encryption $E_k(x_i)$ until she is satisifed
+    {\bf ``Encryption game'' against Eve:}\\\\
+    \hspace*{0.5cm} Allow Eve to pick piece of plaintext, we provide encryption $E_k(x_i)$ until she is satisified
     \hspace*{0.5 cm} Eve chooses two pieces of plaintext\\
     \hspace*{0.5cm} We flip a coin and encrypt one of them\\
     \hspace*{0.5cm} Eve guesses which was encrypted: wins if right
