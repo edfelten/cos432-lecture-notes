@@ -1,0 +1,19 @@
+sudo: required
+dist: trusty
+before_install:
+- sudo apt-get -qq update && sudo apt-get install -y --no-install-recommends texlive-fonts-recommended
+  texlive-latex-extra texlive-fonts-extra dvipng texlive-latex-recommended texlive-generic-extra latex-xcolor
+script:
+- mkdir _build
+- pdflatex -interaction=nonstopmode -halt-on-error -output-directory _build InfoSec.tex
+- pdflatex -interaction=nonstopmode -halt-on-error -output-directory _build InfoSec.tex
+deploy:
+  provider: releases
+  api_key:
+    secure: NzosmKnF3zt57+IPb1Q0Ith0Q7KgGBsuUP8hc88dVdVC6skPSb4ayVyo8y+KmD5UVqoiK028yGELZpLEbn7x44A3KkGNgzI3EBo4iIUdVTBd7iyeiFRLBl3phZRlTORpG+4Sd419tV/iOiiQKLVEFG5pCZMv5nzeFUi0HTWWXE225YYQ7jIebVYwh1dPGg6WnilCOUqexGK6UxRx2mI87qXya5eqK+SPYbUtRElppBTF3zcaEwnf0qvEgdyWmw1cn4CxskNpSXhOGf6jxoc72FcO0dLK0sDuO6n3R/0ICnXWjpMS1Z1NGlBKwQ2ennigu34mWtjahMQlvZ8Di1McjHQ3kVQAK4/IcsE1bh/g2bURUg1jQsjCUvT3UE1Htf2MvXronOOKSI1B1hxIgGdR0nICxqlIiEJmBs5r7v4mw+zLuTfJ5qe68bkK5NQjansnTZDK8i7c8vb1cGrSvThwhXj3CGOmg5/sftBtm0INLFVMMsqGwkUwlObVnQwV1VmoC1bqgXLglNOaJUZeUkmGdNLPcCFvALtAx4twLyUR5iu57G2x3tjTBckVOHLahORFsl3ScBBvuQ5kb1kW6XzxcUNjcddX/0MWr5bvs9rWJN118nLU+XC0CjCeSXpQnq1h3zzYm9HuG6ylW2X1rNTtOCeLk5penM0OhnFG3nETmXY=
+  file: _build/COS432_InfoSec.pdf
+  skip_cleanup: true
+  name: COS432 Lecture Notes $(date +'%m/%d/%Y %R')
+  tag_name: $(date +'%Y-%m-%d-%H-%m')
+  on:
+    repo: ewfelten/cos432-lecture-notes
