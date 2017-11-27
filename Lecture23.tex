@@ -1,3 +1,109 @@
+<<<<<<< HEAD
 %!TEX root = InfoSec.tex
 % Lecture 23: 8 December 2014
 \sektion{23}{Security and ethics}
+=======
+% Lecture 23: 8 December 2014
+\sektion{23}{Quantum Computing}
+\subsektion{Classical Bits}
+\begin{itemize}
+    \item Two states, written as $|0>$ and $|1>$ (classical 0 and classical 1)
+    \item Can read bit to recover state
+    \item Two single bit logic gates: \emph{identity} and \emph{invert}
+\end{itemize}
+\subsektion{Quantum Bits (qubits)}
+By analogy with classical bits:
+\begin{itemize}
+    \item State is a linear combination of classical states: $x|0> + y|1>$, such that $|x|^2 + |y|^2 = 1$
+    \item x and y are complex numbers (giving the linear combination 4 degrees of freedom)
+    \item If x and y are restricted to real values, then possible states represented by the unit circle
+    \item Special measurement operation: 
+    	\begin{itemize}
+		\item Only way to read a qubit's state
+		\item Sets the bit to $|0>$ with probability $|x|^2$ and $|1>$ with probability $|y|^2$, and returns the result
+		\item "destroys" information by reducing qubit to a classical state
+	\end{itemize}
+    \item operations on a qubit = any operation that preserves the condition that $|x|^2 + |y|^2 = 1$
+    \item writing a qubit as $\begin{pmatrix} x \\ y \end{pmatrix}$, a valid operation on a qubit is any unitary matrix M, since $M\begin{pmatrix} x \\ y \end{pmatrix} = \begin{pmatrix} x' \\ y' \end{pmatrix}$ where $|x'|^2 + |y'|^2 = 1$
+    \item example: $R =  \begin{pmatrix} \frac{1}{\sqrt{2}} \ \ \ 0 \\ 0 \ \ \ \frac{1}{\sqrt{2}} \end{pmatrix}$ "rotates" qubit counterclockwise on the unit circle
+\end{itemize}
+
+\sidenote{{\bf Tempting (but wrong) view:}
+
+It's tempting to think of a qubit as a classical bit whose state is "unknown" (i.e. is $|0>$ with probability $|x|^2$ and $|1>$ with probability $|y|^2.$ The R operator above is then thought of as a "randomizing" operator. However, applying $R(R(|0>))$ gives $|1>$ with certainty. This doesn't seem to consist with the view that $R(|0>)$ is a "random" bit,  since applying a randomizing operator to randomness shouldn't lead to a certain outcome. 
+}
+
+\subsektion{Multi-qubit systems:}
+\begin{itemize}
+	\item In a classical system with k bits, the possible states of the system are $|\text{(every k-bit string)}>$, of which there are $2^k$
+	\item In a quantum system, the possible states are $\sum \limits_{i = 0}^{2^k-1} \alpha_i \cdot |s_i>$, where $s_i$ is the ith k-bit string, such that $\sum \limits_{i = 0}^{2^k-1} |\alpha_i|^2 = 1$
+	\item Measuring the system forces it into classical state $|s_i>$ with probability $|\alpha_i|^2$
+	\item In principle, operations on the multi-qubit system include any unitary matrix
+	\item In practice, we use a few simple gates
+	\item Computation:
+		\begin{itemize}
+			\item initial state $= |(input)0000É0>$ (input is padded with zeros to some fixed length)
+			\item perform some preprogrammed set of gates
+			\item measure system to produce output
+			\item goal is for the system to collapse to the "correct" answer with high probability upon measurement
+		\end{itemize}
+\end{itemize}
+
+Can we built a quantum computer? Right now, we can only build small ones, but there is reason to believe we will be able to construct larger ones in the future. 
+
+\subsektion{Advantages of QC}
+There is a common but wrong view that quantum computers will be able to solve any problem in NP efficiently (i.e. in polynomial time). The idea here is that you can put a quantum computer into a state which is a superposition of all the possible solutions, and then measure to determine the "correct" answer. In reality, decreasing the coefficients on incorrect answers and increasing the coefficient on correct answer(s) isn't always easy. 
+\\
+\\
+What we know:
+\begin{itemize}
+	\item for general NP hard problems, classical computers require brute force search (takes $O(2^n)$ time)
+	\item Grover's algorithm $\implies$ quantum computers can solve these problems in $O(2^{n/2})$, a dramatic improvement but still super-polynomial
+	\item there exist some such problems which quantum computers can solve efficiently
+		\begin{itemize}
+			\item factoring (via Shor's algorithm)
+			\item discrete log problem (via a variant of Shor's algorithm)
+		\end{itemize}
+\end{itemize}
+
+\subsektion{Implications for crypto}
+\begin{itemize}
+	\item in a world with large quantum computers, protocols that rely on the hardness of factoring and the discrete log problem are useless (including RSA, Diffie-Hellman, etc)
+	\item most symmetric crypto (e.g. AES) is not breakable (in the domain of GroverÕs algorithm)
+	\item Grover's algorithm implies that we can break AES that uses a 128-bit key in $2^{128/2} = 2^64$ steps
+	\item Solution: double the key size
+	\item are there public key algorithms that are not breakable fast by quantum computers? probably
+\end{itemize}
+
+\subsektion{Quantum Key Exchange}
+\begin{itemize}
+	\item Threat model:
+		\begin{itemize}
+			\item quantum channel between Alice and Bob
+			\item assume there exists an eavesdropper who a) can measure but b) cannot modify qubits in the channel without measuring
+		\end{itemize}
+	\item 1) before sending, Alice flips coin; if heads, apply R to the bit before sending
+	\item 2) when Bob gets a bit, flip coin: if heads, apply $R^{-1}$ to the bit before measuring
+	\item 3) Alice and Bob publish their coin flips, discard any bits where flips donÕt match
+	\item 4) Alice picks half of the remaining bits, at random, and Alice and Bob publish their values for these bits
+		\begin{itemize}
+			\item if any fail to match, abort the protocol (eavesdropper was measuring)
+			\item otherwise, use the remaining bits as a shared secret
+		\end{itemize}
+	\item The adversary has a decision: which bits, if any, should he measure?
+	\item If adversary measures:
+		\begin{itemize}
+			\item if Alice flipped tails, gets correct value
+			\item if Alice flipped heads, get correct value with probability 50\%
+			\item If Alice flipped heads and Bob applied $R^{-1}$, then there is a 50\% chance Bob's bit won't match Alice's
+			\item Overall, if the adversary measures, there is a 25\% chance that Bob's bit won't match alice's (chance that Alice flipped heads times chance bit collapsed to the wrong value during adversary's measurement)
+		\end{itemize}
+	\item The adversary might also try to apply $R^{-1}$ before measuring; in this case, he runs the risk of disrupting bits that were in the classical state to begin with
+	\item Problem: the adversary needs to guess AliceÕs coin flip to measure the bit without disturbing it
+		\begin{itemize}
+			\item if the adversary modifies more than 4 of the check bits, they will get caught with greater than 50\% probability
+			\item if the adversary measures a lot, likely that integrity check will fail
+			\item if the adversary doesnÕt measure a lot, Alice and Bob will have a larger shared secret		
+		\end{itemize}
+\end{itemize}
+>>>>>>> 8e525b42b773087a879a1983645b17cc93ee0bb7
