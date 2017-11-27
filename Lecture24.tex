@@ -1,0 +1,51 @@
+% Lecture 24: 10 December 2014
+\sektion{24}{Password Cracking}
+
+\subsektion{Elementary Methods}
+
+First, try to define and reduce the search space for a brute-force search:
+\begin{itemize}
+    \item all short strings
+    \item combinations of dictionary words
+    \item dictionary words + common modifications (special characters, exclamation point at the end)
+    \item leaked passwords from past breaches
+    \item dictionary words and one-character modifications
+\end{itemize}
+
+Properties of brute-force search:
+\begin{itemize}
+    \item Time requirement: $\sim|D|$, where $|D|$ is the length of the dictionary
+    \item Space: $\sim1$
+    \item Can speed up the process by pre-computing hashes of all possible passwords in search space:
+    	\begin{itemize}
+		\item Fill hash table: can then find $x \in D$ given $H(x)$
+		\item Time to build: $\sim|D|$
+		\item Space: $\sim|D|$
+		\item Time to recover: $\sim1$
+	\end{itemize}
+    \item What we want: smaller data structure, but still fast lookup $\implies$ \emph{Rainbow Tables}
+\end{itemize}
+
+\subsektion{Rainbow Tables}
+Define "reduction functions" $R_0, R_1, \cdots, R_{k-1}.$ The only requirement of these functions is that they map the output of a hash function to a string in your dictionary. The functions "reduce" since the number of hash outputs might be very large (e.g. $2^{256}$), while the dictionary is generally smaller.
+\\
+\\
+Method: Generate chains
+	\begin{itemize}
+		\item Start with $a_0$, a random dictionary word. Then, compute $H(a_0)$. Next, apply $R_0$ to $H(a_0)$ to generate the next word, $a_1$. 
+		\item Complete chain: $a_0 \to_H H(a_0) \to_{R_0} a_1 \to_H \cdots \to_{R_{k-2}} a_{k-1} \to_H H(a_{k-1}) \to_{R_{k-1}} a_k$
+		\item Build chains with a variety of starting values $b_0, c_0$, etc...
+		\item since the output of a cryptographic hash function is essentially pseudorandom, so is distribution of words that appear in a chain
+		\item for each chain, remember $(a_0, a_k), (b_0, b_k)$, etc
+		\item there are about $\sim \frac{|D|}{k}$ chains, so storage requirement is $\sim \frac{2|D|}{k}$
+		\item k is a parameter we can adjust to control by how much we shrink storage
+	\end{itemize}
+	
+You can use a rainbow table to recover $x \in D$ given $H(x)$ efficiently. 
+	\begin{itemize}
+		\item 1) Figure out which chain H(x) appears in
+		\item 2) Walk that chain, we will see $x \to H(x)$ in that chain
+		\item to find the chain $H(x)$ is in, guess which position in chain it is
+		\item Step 1: $k^2$ time
+		\item Step 2: $k$ time
+	\end{itemize}

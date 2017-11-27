@@ -1,7 +1,12 @@
+<<<<<<< HEAD
 %!TEX root = InfoSec.tex
 % Lecture 9: 8 October 2014
 \sektion{9}{Secure Programming}
 
+=======
+% Lecture 9: 08 October 2014
+\sektion{9}{Information flow and multi-level security}
+>>>>>>> 8e525b42b773087a879a1983645b17cc93ee0bb7
 Information flow: how to control propagation of information within a program or
 between programs on a system where there is some confidentiality requirement.
 
@@ -9,23 +14,55 @@ Consider a program $P(v, s, r)$:
 \begin{itemize}
     \item $v$: visible (public) input
     \item $s$: secret input
+<<<<<<< HEAD
     \item $r$: randomness (secret)
 \end{itemize}
 Output: all visible actions of program but doesn't leak secret input
 
 Does the output of $P$ leak information about $s$? Define a game against
 adversary where he provides $s_0$ and $s_1$. We announce $P(v, s_b, r)$ where $b \in \{1, 0\}$ and $r$ is secret and random. The adversary guesses what $b$ is. Security is defined by the adversary having no strategy that nets him a a non-negligible advantage in finding $b$.
+=======
+    \item $r$: random seed
+\end{itemize}
+Output: all visible actions of program. Output doesn't "leak" s. 
+
+Does the output of $P$ leak information about $s$? Define a game against
+adversary guessing between two possible secrets $s$ (similar to semantic security). To avoid leakage, the distribution of outputs must be independent of $s$ for all possible values of $v$.
+
+Game:
+\begin{itemize}
+	\item adversary chooses v, $s_0$, $s_1$
+	\item we announce P(v, $s_b$, r), where $b \in \{0,1\}$, r are secret and random
+	\item adversary guesses b
+\end{itemize}
+
+We say P doesn't leak s if adversary can't be correct with probability non-negligibly greater than $50\%$ (assuming a computationally-limited adversary).
+>>>>>>> 8e525b42b773087a879a1983645b17cc93ee0bb7
 
 How to enforce non-leakiness?
 
 Unlike with previous properties, cannot enforce by watching $P$ run.
 (Just because no output came out doesn't mean there wasn't a leak - ``dog that
+<<<<<<< HEAD
 didn't bark problem''). It's inherently necessary to consider what-ifs that
 differ from what you actually saw
+=======
+didn't bark problem''). We can't prove this property by testing. It's inherently necessary to consider what-ifs that differ from what you actually saw. 
+
+Also, in practice requirement are more complex (more complex labels, and different labels on different data). 
+
+Generalization:
+\begin{itemize}
+	\item label information (e.g. inputs)
+	\item put requirements on outputs
+	\item enforce that outputs respect requirements
+\end{itemize}
+>>>>>>> 8e525b42b773087a879a1983645b17cc93ee0bb7
 
 \subsektion{Lattice model}
 General model for information flow policy
 
+<<<<<<< HEAD
 \begin{definition}{Lattice} % these are very similiar to binary relations in econ310
 
     $(S, \sqsubseteq)$, $S$: set of labels, $\sqsubseteq$: partial order such
@@ -38,6 +75,13 @@ General model for information flow policy
             $a \sqsubseteq v$ and $b \sqsubseteq v$ $\Rightarrow$
             $u \sqsubseteq v$
     \end{itemize}
+=======
+\begin{definition}{Lattice}
+
+    $(S, \sqsubseteq)$, $S$: set of states, $\sqsubseteq$: partial order such
+    that for any $a, b \in S$, there is a least upper bound of $a, b$ and a
+    greatest lower bound of $a,b$.
+>>>>>>> 8e525b42b773087a879a1983645b17cc93ee0bb7
 
     partial order:
     \begin{itemize}
@@ -46,7 +90,22 @@ General model for information flow policy
             $a \sqsubseteq c$
         \item asymmetric: $a \sqsubseteq b$ and $b \sqsubseteq a$, then $a = b$
     \end{itemize}
+<<<<<<< HEAD
 
+=======
+    least upper bound of $a, b$:
+    \begin{itemize}
+        \item $a \sqsubseteq U$ and $b \sqsubseteq U$ and for all $V \in S$,
+            $a \sqsubseteq V$ and $b \sqsubseteq V$ $\Rightarrow$
+            $U \sqsubseteq V$
+    \end{itemize}
+    greatest lower bound of $a, b$:
+    \begin{itemize}
+        \item $L \sqsubseteq a$ and $L \sqsubseteq b$ and for all $V \in S$,
+            $V \sqsubseteq a$ and $V \sqsubseteq a$ $\Rightarrow$
+            $V \sqsubseteq L$
+    \end{itemize}
+>>>>>>> 8e525b42b773087a879a1983645b17cc93ee0bb7
 \end{definition}
 \begin{example}{Lattices}
     \begin{enumerate}
@@ -56,6 +115,7 @@ General model for information flow policy
 
             unclassified $\sqsubseteq$ classified $\sqsubseteq$ secret
                 $\sqsubseteq$ top secret
+<<<<<<< HEAD
         \item compartments (eg. project, client ID, job function)
 
             label (project) is set of states (project 1, project 2, etc.), $\sqsubseteq$ is subset
@@ -85,17 +145,54 @@ policy) -- ``dog that didn't bark''. \textbf{A troublesome example:}
 // label(a) = ``secret''
 b = 0;  // 0 isn't secret, so b is set to unclassified
 if (a > 5)  b = 1;  // Requires static (compile-time) analysis to get right
+=======
+        \item compartments (e.g. project, client ID, job function)
+
+            state is set of labels, $\sqsubseteq$ is subset
+        \item org chart
+
+            state is node in chart, $\sqsubseteq$ is ancestor/descendant
+        \item combination/cross product of lattices
+
+            state is $(S_1, S_2)$, $(A_1, B_1) \sqsubseteq (A_2, B_2)$ iff
+            $A_1 \sqsubseteq A_2$ and $B_1 \sqsubseteq B_2$
+    \end{enumerate}
+\end{example}
+\subsektion{Information flow in a program}
+At each point in the program, every variable has a state/label (that comes from the
+lattice we're using). Inputs are tagged with state. Outputs are tagged with a requirement. States are propagated
+when code executes.
+
+Example: $a = b + c$; State($a$) = LUB(State($b$), State($c$))
+[LUB = Least Upper Bound]
+
+Before providing output, check that state of output value is consistent with
+policy. (For example, only allowed to emit unclassified output.) Formally, ensure that $label(v) \sqsubseteq L$, where L is the required policy.
+
+But this isn't enough (only monitoring and rejecting when inconsistent with
+policy) -- ``dog that didn't bark'':
+\begin{verbatim}
+// State(a) = ``secret''
+// State(c) = State(d) = public
+b = c;
+if (a > 5)  b = d;  // Requires static (compile-time) analysis to get right
+>>>>>>> 8e525b42b773087a879a1983645b17cc93ee0bb7
 output b;   // Says something about a, so should be labelled as secret
 \end{verbatim}
 Static analysis won't catch all, but will catch some of the leaks.
 \begin{description}
     \item[Problem 1:] conservative analysis leads to being overly cautious
+<<<<<<< HEAD
     \item[Problem 2:] timing might depend on values
     \item[Problem 3:] ``covert channels''; shared resource channels might reveal clues about, for example, what files are being opened and what secret(s) that might affect.
+=======
+    \item[Problem 2:] timing might depend on values (can lead to covert channel attacks)
+>>>>>>> 8e525b42b773087a879a1983645b17cc93ee0bb7
 \end{description}
 
 {\bf What if you can't prevent a program from leaking the information it has?}
 
+<<<<<<< HEAD
 {\bf Bell-LaPadula model}: lattice-based information flow for programs and files
 \begin{itemize}
 \item every program has a label (from lattice): what it's allowed to access
@@ -107,14 +204,35 @@ Static analysis won't catch all, but will catch some of the leaks.
     not to leak information
 \end{itemize}
 \begin{theorem*} If label($F_1$) $\sqsubseteq$ label($F_2$) and the two rules are
+=======
+Conservative assumption (contagion model): every programs leaks all its inputs to all its outputs. 
+
+{\bf Bell-LaPadula model}: lattice-based information flow for programs and files
+\begin{itemize}
+\item every program has a state (from lattice): what it's allowed to access
+\item every file has a state: what it contains
+\item Rule 1: ``No Read Up'' - Program $P$ can read File $F$ only if State($F$)
+    $\sqsubseteq$ State($P$)
+\item Rule 2: ``No Write Down'' - Program $P$ can write File $F$ only if
+    State($P$) $\sqsubseteq$ State($F$)
+\end{itemize}
+\begin{theorem*} If State($F_1$) $\sqsubseteq$ State($F_2$) and the two rules are
+>>>>>>> 8e525b42b773087a879a1983645b17cc93ee0bb7
 enforced, then information from $F_2$ cannot leak into $F_1$.
 \end{theorem*}
 
 Problems:
 \begin{enumerate}
+<<<<<<< HEAD
     \item expections (need to make explicit loopholes in system to allow)
     \begin{itemize}
         \item declassification of old data
+=======
+    \item exceptions (need to make explicit loopholes in system to allow)
+    \begin{itemize}
+        \item declassify/unprotect old data
+        \item what about encryption (hope "secret" ciphertext doesn't leak plaintext)
+>>>>>>> 8e525b42b773087a879a1983645b17cc93ee0bb7
         \item aggregate/``anonymized'' data
         \item policy decision to make exception
     \end{itemize}
@@ -126,6 +244,7 @@ Problems:
 
 This, so far, has been about confidentiality. Can we do the same thing for
 integrity?
+<<<<<<< HEAD
 
 \begin{example}
 Any program is able to delete a file and overwrite ``secret plans''. Our program/file
@@ -134,6 +253,17 @@ is public, so it can write UP and replace contents of ``secret plans''. This is 
 
 {\bf Biba model}: (B-LP for integrity)
 \begin{itemize}
+=======
+\begin{itemize}
+    \item State: level of trust in integrity of information
+    \item ensure high-integrity data doesn't depend on low-integrity inputs
+        (try to avoid GIGO problem)
+\end{itemize}
+
+{\bf Biba model}: (B-LP for integrity)
+\begin{itemize}
+    \item Label/state: how much we trust program with respect to integrity/how important file is
+>>>>>>> 8e525b42b773087a879a1983645b17cc93ee0bb7
     \item Rule 1: ``No Read Down''
     \item Rule 2: ``No Write Up''
 \end{itemize}
@@ -144,6 +274,7 @@ B-LP model and Biba model at the same time?
         then no communication between levels
     \item if different labels, then some information flows become possible, but
         could result in being much more difficult for users
+<<<<<<< HEAD
     \item especially with static program analysis, things become conservative
         and flexibility is lost
     \item result: usually focus on confidentiality or integrity and let humans
@@ -154,6 +285,12 @@ The takeaway is that information flow tools are useful for preventing yourself f
 making mistakes, but not so useful to protect against an adversary.
 
 \sidenote{{\bf Back to crypto... [a note from 2012]}
+=======
+    \item result: usually focus on confidentiality or integrity and let humans
+        worry about this outside of the system
+\end{itemize}
+\sidenote{{\bf Back to crypto...}
+>>>>>>> 8e525b42b773087a879a1983645b17cc93ee0bb7
 
 Secret sharing:
 \begin{itemize}
