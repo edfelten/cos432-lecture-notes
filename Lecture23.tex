@@ -37,7 +37,7 @@ It's tempting to think of a qubit as a classical bit whose state is "unknown" (i
 	\item In practice, we use a few simple gates
 	\item Computation:
 		\begin{itemize}
-			\item initial state $= |(input)0000…0>$ (input is padded with zeros to some fixed length)
+			\item initial state $= |(input)00000>$ (input is padded with zeros to some fixed length)
 			\item perform some preprogrammed set of gates
 			\item measure system to produce output
 			\item goal is for the system to collapse to the "correct" answer with high probability upon measurement
@@ -64,7 +64,7 @@ What we know:
 \subsektion{Implications for crypto}
 \begin{itemize}
 	\item in a world with large quantum computers, protocols that rely on the hardness of factoring and the discrete log problem are useless (including RSA, Diffie-Hellman, etc)
-	\item most symmetric crypto (e.g. AES) is not breakable (in the domain of Grover’s algorithm)
+	\item most symmetric crypto (e.g. AES) is not breakable (in the domain of Grover's algorithm)
 	\item Grover's algorithm implies that we can break AES that uses a 128-bit key in $2^{128/2} = 2^64$ steps
 	\item Solution: double the key size
 	\item are there public key algorithms that are not breakable fast by quantum computers? probably
@@ -79,7 +79,7 @@ What we know:
 		\end{itemize}
 	\item 1) before sending, Alice flips coin; if heads, apply R to the bit before sending
 	\item 2) when Bob gets a bit, flip coin: if heads, apply $R^{-1}$ to the bit before measuring
-	\item 3) Alice and Bob publish their coin flips, discard any bits where flips don’t match
+	\item 3) Alice and Bob publish their coin flips, discard any bits where flips don't match
 	\item 4) Alice picks half of the remaining bits, at random, and Alice and Bob publish their values for these bits
 		\begin{itemize}
 			\item if any fail to match, abort the protocol (eavesdropper was measuring)
@@ -94,10 +94,10 @@ What we know:
 			\item Overall, if the adversary measures, there is a 25\% chance that Bob's bit won't match alice's (chance that Alice flipped heads times chance bit collapsed to the wrong value during adversary's measurement)
 		\end{itemize}
 	\item The adversary might also try to apply $R^{-1}$ before measuring; in this case, he runs the risk of disrupting bits that were in the classical state to begin with
-	\item Problem: the adversary needs to guess Alice’s coin flip to measure the bit without disturbing it
+	\item Problem: the adversary needs to guess Alice's coin flip to measure the bit without disturbing it
 		\begin{itemize}
 			\item if the adversary modifies more than 4 of the check bits, they will get caught with greater than 50\% probability
 			\item if the adversary measures a lot, likely that integrity check will fail
-			\item if the adversary doesn’t measure a lot, Alice and Bob will have a larger shared secret		
+			\item if the adversary doesn't measure a lot, Alice and Bob will have a larger shared secret		
 		\end{itemize}
 \end{itemize}
